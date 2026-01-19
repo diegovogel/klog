@@ -1,59 +1,58 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Memories
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+An app for collecting memories of our boys. Like a private Tumblr.
 
-## About Laravel
+Why not just use Tumblr or some other existing platform? Longevity. I want to be able to view these memories 20, 30, or 40 years from now, and I want the boys and their families to be able to do the same. I realize it's very ambitious to build anything on the web that's supposed to last that long, but to improve my chances, I can't rely on a platform that might shut down. I'm sure I could export the data, but then it would be a pain to import it or use it.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Goals
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- Very easy and quick to upload content. We should be able to upload a simple memory in one minute or less.
+- Multiple memory formats:
+    - Text
+    - Photo/video
+    - Audio
+    - URL — automatically take a snapshot of the URL so we avoid broken links down the road.
+- Can be browsed by visiting their domains and logging in.
+- Built to last. The idea is that we/they will view these 20+ years from now.
+- Excellent search. If we can't find a memory, what's the point?
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Architecture Decisions
 
-## Learning Laravel
+- **Laravel back end.** I know Laravel. It's healthy. It's very flexible. The data is clean and portable (as opposed to WordPress, where the DB tables are a mess). 
+- **Blade front end enhanced with Alpine or vanilla JS.** No dependence on a build step means better maintainability and longevity because there are fewer things to become obsolete. Server-rendered HTML is more likely to last and just simpler. Blade templates can easily be migrated to something else later if needed.
+- **No UI library.** To increase longevity, I'll rely on HTML as much as possible and sprinkle in JS only where it's necessary. It won't win any UX awards, but it will be around a lot longer and with a lot less effort than anything that does.
+- **Mobile experience via PWA.** No additional work needed. I can always make a mobile app later if needed. If an API is needed, adding that would be trivial too.
+- **Vanilla CSS with Vite.** I was initially going to avoid any kind of build step or preprocessor for the sake of longevity, but Laravel comes with Vite out of the box. It's nice for development because of HMR, plus it handles minification, prefixing, and cache busting. However, I'm going to use vanilla CSS for styling so they can be easily migrated to something else or used without a build step at all.
+- **SQLite database.** Lightweight, portable, and plenty powerful enough for this project.
+- **Markdown saved in DB.** Memory text content will be Markdown so we get rich text, but stored in the DB for better searchability.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Models
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+**memories**
 
-## Laravel Sponsors
+- id
+- type (text|photo|video|audio|url)
+- title
+- content
+- captured_at (for memories with media)
+- created_at
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+**media**
 
-### Premium Partners
+- id
+- memory_id
+- filename
+- original_filename
+- mime_type
+- size
+- path
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+**tags**
 
-## Contributing
+- Simple pivot table.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Roadmap
 
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- [ ] **Static export command.** Something like `php artisan memories:export-static`. This would generate HTML files for all pages and bundle them into a single ZIP file along with all assets. These snapshots would be extremely portable and almost timeless compared to a live site. Anyone could unzip them and view the entire site in a browser. They could also be used as backups.
+- [ ] **PDF export command.** Something like `php artisan memories:export-pdf {start_date}`. This would generate a PDF of all memories in a layout that would work well for printing. The start date argument would be optional and would allow us to print new memories from time to time.
+- [ ] **Audio and video transcription.** When an audio or video memory is uploaded, it's automatically transcribed and saved to the DB. The text could be used for search, displayed for accessibility, and used in the PDF export.
