@@ -1,0 +1,25 @@
+<?php
+
+namespace Database\Factories;
+
+use App\Enums\MemoryType;
+use App\Models\Memory;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Carbon;
+
+class MemoryFactory extends Factory
+{
+    protected $model = Memory::class;
+
+    public function definition(): array
+    {
+        return [
+            'title' => $this->faker->words(),
+            'content' => $this->faker->paragraph(),
+            'type' => array_rand(MemoryType::values()),
+            'captured_at' => Carbon::now(),
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
+        ];
+    }
+}
