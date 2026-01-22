@@ -14,7 +14,7 @@ class MemoryFactory extends Factory
     public function definition(): array
     {
         return [
-            'title' => $this->faker->words(),
+            'title' => $this->faker->sentence(),
             'content' => $this->faker->paragraph(),
             'type' => array_rand(MemoryType::values()),
             'captured_at' => Carbon::now(),

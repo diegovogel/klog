@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('media', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('memory_id')->constrained()->cascadeOnDelete();
+            $table->morphs('mediable');
 
             // File information
             $table->string('filename');
@@ -27,7 +27,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index(['memory_id', 'order']);
+            $table->index(['mediable_id', 'mediable_type', 'order']);
         });
     }
 

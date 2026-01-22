@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('type')->nullable(); // MemoryType enum.
             $table->timestamp('captured_at')->nullable(); // When the memory happened. Only for media.
             $table->timestamps();
+            $table->softDeletes();
 
             // Indexes
             $table->index('captured_at');

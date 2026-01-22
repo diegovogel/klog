@@ -26,7 +26,8 @@ class MediaFactory extends Factory
             'type' => array_rand(MediaType::values()),
             'metadata' => null,
             'order' => 0,
-            'memory_id' => Memory::factory(),
+            'mediable_id' => Memory::factory(),
+            'mediable_type' => (new Memory)->getMorphClass(),
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
         ];

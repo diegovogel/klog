@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Media extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'memory_id',
+        'mediable_id',
+        'mediable_type',
         'filename',
         'original_filename',
         'mime_type',
@@ -23,8 +25,8 @@ class Media extends Model
         'order',
     ];
 
-    public function memory(): BelongsTo
+    public function mediable(): MorphTo
     {
-        return $this->belongsTo(Memory::class);
+        return $this->morphTo();
     }
 }
