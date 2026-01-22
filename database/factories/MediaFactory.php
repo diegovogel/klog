@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Enums\MediaType;
 use App\Enums\MimeType;
 use App\Models\Media;
+use App\Models\Memory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -25,7 +26,7 @@ class MediaFactory extends Factory
             'type' => array_rand(MediaType::values()),
             'metadata' => null,
             'order' => 0,
-            'memory_id' => $this->faker->randomNumber(),
+            'memory_id' => Memory::factory(),
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
         ];
