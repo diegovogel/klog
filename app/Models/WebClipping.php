@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class WebClipping extends Model
@@ -22,8 +22,8 @@ class WebClipping extends Model
         return $this->belongsTo(Memory::class);
     }
 
-    public function screenshot(): MorphMany
+    public function screenshot(): MorphOne
     {
-        return $this->morphMany(Media::class, 'mediable');
+        return $this->morphOne(Media::class, 'mediable');
     }
 }
