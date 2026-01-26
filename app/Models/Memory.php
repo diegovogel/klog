@@ -55,4 +55,15 @@ class Memory extends Model
 
         $this->tags()->sync($tags->pluck('id'));
     }
+
+    public function attachTagNames(array $tagNames): void
+    {
+        $tagIds = collect($tagNames)
+            ->map(fn ($name) => trim($name))
+            ->filter()
+            ->unique()
+            ->map(fn ($name) => Tag::findOrCreateByName($name)->id);
+
+        $this->tags()->syncWithoutDetaching($tagIds);
+    }
 }

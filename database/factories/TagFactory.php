@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\Tag;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 class TagFactory extends Factory
 {
@@ -12,9 +13,11 @@ class TagFactory extends Factory
 
     public function definition(): array
     {
+        $name = $this->faker->word();
+
         return [
-            'name' => $this->faker->word(),
-            'slug' => $this->faker->slug(),
+            'name' => $name,
+            'slug' => Str::slug($name),
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
         ];
