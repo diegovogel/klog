@@ -25,7 +25,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             MemorySeeder::class,
             WebClippingSeeder::class,
-            //            MediaSeeder::class,
+            MediaSeeder::class,
         ]);
     }
 }

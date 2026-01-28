@@ -22,7 +22,7 @@ class MediaFactory extends Factory
             'mime_type' => $this->faker->randomElement(MimeType::values()),
             'size' => $this->faker->randomNumber(7, true),
             'disk' => 'local',
-            'path' => $this->faker->word(),
+            'path' => $this->faker->filePath(),
             'type' => $this->faker->randomElement(MediaType::values()),
             'metadata' => null,
             'order' => 0,
