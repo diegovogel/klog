@@ -9,6 +9,7 @@ class MemorySeeder extends Seeder
 {
     public function run(): void
     {
+        // Create memories for the last 400 days.
         for ($i = 0; $i < 400; $i++) {
             $date = now()->subDays($i);
             Memory::factory()->create([
