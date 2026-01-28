@@ -41,30 +41,18 @@ might shut down. I'm sure I could export the data, but then it would be a pain t
 - **Markdown saved in DB.** Memory text content will be Markdown so we get rich text, but stored in the DB for better
   searchability.
 
-## Models
+## User Management
 
-**memories**
+There is no registration page. Users are managed entirely via Artisan commands on the server. Since new users will very
+rarely be created, this slight inconvenience seemed worth the simplicity and security benefits.
 
-- id
-- type (text|photo|video|audio|url)
-- title
-- content
-- captured_at (for memories with media)
-- created_at
+```bash
+# Create a new user (interactive prompts for name, email, password)
+php artisan user:create
 
-**media**
-
-- id
-- memory_id
-- filename
-- original_filename
-- mime_type
-- size
-- path
-
-**tags**
-
-- Simple pivot table.
+# Reset a user's password (interactive prompts for email, new password)
+php artisan user:reset-password
+```
 
 ## Roadmap
 
@@ -77,3 +65,4 @@ might shut down. I'm sure I could export the data, but then it would be a pain t
   allow us to print new memories from time to time.
 - [ ] **Audio and video transcription.** When an audio or video memory is uploaded, it's automatically transcribed and
   saved to the DB. The text could be used for search, displayed for accessibility, and used in the PDF export.
+- [ ] **Password reset flow and 2FA.**

@@ -4,7 +4,6 @@ use App\Models\Media;
 use App\Models\Memory;
 use App\Models\Tag;
 use App\Models\User;
-use App\Models\WebClipping;
 use Database\Seeders\DatabaseSeeder;
 
 it('creates a default user', function () {

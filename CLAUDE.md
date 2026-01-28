@@ -27,6 +27,8 @@ composer test           # Clear config cache and run Pest tests
 npm run build           # Production build
 php artisan migrate     # Run migrations
 php artisan db:seed     # Seed database
+php artisan user:create          # Create a new user (interactive)
+php artisan user:reset-password  # Reset a user's password (interactive)
 ```
 
 ## Architecture & Design Principles
@@ -37,6 +39,8 @@ php artisan db:seed     # Seed database
 - **Soft deletes** on all core entities (Memory, Media, Tag, WebClipping)
 - **No denormalized type column** — `Memory->types` is computed from relationships (content, media, web clippings)
 - **Polymorphic media** — `Media` attaches to `Memory` and `WebClipping` via `mediable_type`/`mediable_id`
+- **Simple auth** — session-based login, no registration, no password reset flow, no 2FA. Users are created via
+  `php artisan user:create`. All routes require authentication except `/login`
 
 ## Data Model
 
@@ -73,22 +77,24 @@ php artisan db:seed     # Seed database
 
 - Tests use in-memory SQLite (`phpunit.xml` overrides DB)
 - `RefreshDatabase` trait for test isolation
-- Feature tests for models and seeders in `tests/Feature/`
+- Feature tests for models, seeders, auth, and commands in `tests/Feature/`
 - Factories available for all models in `database/factories/`
 
 ## Project Structure
 
 ```
-app/Enums/          — PHP enums (MemoryType, MediaType, MimeType)
-app/Models/         — Eloquent models
-app/Services/       — Business logic
-app/Http/Requests/  — Form request validation
-database/migrations/ — Schema definitions
-database/factories/ — Test data factories
-database/seeders/   — Database seeders
-resources/views/    — Blade templates
-resources/css/      — Tailwind entry point
-resources/js/       — Minimal vanilla JS
-tests/Feature/      — Feature/integration tests
-tests/Unit/         — Unit tests
+app/Console/Commands/ — Artisan commands (user:create, user:reset-password)
+app/Enums/            — PHP enums (MemoryType, MediaType, MimeType)
+app/Http/Controllers/ — Controllers (Auth/LoginController)
+app/Http/Requests/    — Form request validation (Auth/LoginRequest)
+app/Models/           — Eloquent models
+app/Services/         — Business logic
+database/migrations/  — Schema definitions
+database/factories/   — Test data factories
+database/seeders/     — Database seeders
+resources/views/      — Blade templates (auth/login)
+resources/css/        — Tailwind entry point
+resources/js/         — Minimal vanilla JS
+tests/Feature/        — Feature/integration tests
+tests/Unit/           — Unit tests
 ```
