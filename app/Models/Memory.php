@@ -23,6 +23,10 @@ class Memory extends Model
         'captured_at',
     ];
 
+    protected $casts = [
+        'captured_at' => 'datetime',
+    ];
+
     /**
      * Derive memory types from content and relationships.
      *
