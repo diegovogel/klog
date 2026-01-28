@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\MediaType;
+use App\Enums\MemoryType;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -17,9 +20,49 @@ class Memory extends Model
     protected $fillable = [
         'title',
         'content',
-        'type',
         'captured_at',
     ];
+
+    /**
+     * Derive memory types from content and relationships.
+     *
+     * @return array<string>
+     */
+    protected function types(): Attribute
+    {
+        return Attribute::make(
+            get: function (): array {
+                $types = [];
+
+                // Check for text content
+                if (! empty($this->content)) {
+                    $types[] = MemoryType::TEXT->value;
+                }
+
+                // Check for web clippings
+                if ($this->webClippings()->exists()) {
+                    $types[] = MemoryType::WEBCLIP->value;
+                }
+
+                // Check for media types
+                $mediaTypes = $this->media()->pluck('type')->unique();
+                foreach ($mediaTypes as $mediaType) {
+                    $memoryType = match ($mediaType) {
+                        MediaType::IMAGE->value, MediaType::IMAGE => MemoryType::PHOTO->value,
+                        MediaType::VIDEO->value, MediaType::VIDEO => MemoryType::VIDEO->value,
+                        MediaType::AUDIO->value, MediaType::AUDIO => MemoryType::AUDIO->value,
+                        default => null,
+                    };
+
+                    if ($memoryType !== null) {
+                        $types[] = $memoryType;
+                    }
+                }
+
+                return $types;
+            }
+        );
+    }
 
     public function media(): MorphMany
     {

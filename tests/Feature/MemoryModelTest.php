@@ -12,6 +12,69 @@ it('should have many media items', function () {
     expect($memory->media()->count())->toBe(3);
 });
 
+describe('derived types', function () {
+    it('should return empty array when no content, media, or web clippings exist', function () {
+        $memory = Memory::factory()->create(['content' => null]);
+
+        expect($memory->types)->toBe([]);
+    });
+
+    it('should include text when memory has content', function () {
+        $memory = Memory::factory()->create(['content' => 'Some text content']);
+
+        expect($memory->types)->toBe(['text']);
+    });
+
+    it('should include photo when memory has image media', function () {
+        $memory = Memory::factory()->create(['content' => null]);
+        Media::factory()->image()->for($memory, 'mediable')->create();
+
+        expect($memory->types)->toBe(['photo']);
+    });
+
+    it('should include video when memory has video media', function () {
+        $memory = Memory::factory()->create(['content' => null]);
+        Media::factory()->video()->for($memory, 'mediable')->create();
+
+        expect($memory->types)->toBe(['video']);
+    });
+
+    it('should include audio when memory has audio media', function () {
+        $memory = Memory::factory()->create(['content' => null]);
+        Media::factory()->audio()->for($memory, 'mediable')->create();
+
+        expect($memory->types)->toBe(['audio']);
+    });
+
+    it('should include webclip when memory has web clippings', function () {
+        $memory = Memory::factory()->create(['content' => null]);
+        WebClipping::factory()->for($memory)->create();
+
+        expect($memory->types)->toBe(['webclip']);
+    });
+
+    it('should include multiple types when memory has content, media, and web clippings', function () {
+        $memory = Memory::factory()->create(['content' => 'Some text']);
+        Media::factory()->image()->for($memory, 'mediable')->create();
+        Media::factory()->video()->for($memory, 'mediable')->create();
+        WebClipping::factory()->for($memory)->create();
+
+        expect($memory->types)->toContain('text')
+            ->toContain('webclip')
+            ->toContain('photo')
+            ->toContain('video')
+            ->toHaveCount(4);
+    });
+
+    it('should not duplicate types when multiple media of same type exist', function () {
+        $memory = Memory::factory()->create(['content' => null]);
+        Media::factory()->image()->for($memory, 'mediable')->create();
+        Media::factory()->image()->for($memory, 'mediable')->create();
+
+        expect($memory->types)->toBe(['photo']);
+    });
+});
+
 it('should have many web clippings', function () {
     $memory = Memory::factory()->create();
     WebClipping::factory(3)->for($memory)->create();
