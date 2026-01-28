@@ -19,7 +19,7 @@ class Tag extends Model
 
     public function memories(): BelongsToMany
     {
-        return $this->belongsToMany(Memory::class);
+        return $this->belongsToMany(Memory::class)->withTimestamps();
     }
 
     // Auto-generate slug when creating

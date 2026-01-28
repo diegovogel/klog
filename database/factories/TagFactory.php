@@ -13,7 +13,7 @@ class TagFactory extends Factory
 
     public function definition(): array
     {
-        $name = $this->faker->word();
+        $name = $this->faker->unique()->words(rand(1, 2), true);
 
         return [
             'name' => $name,

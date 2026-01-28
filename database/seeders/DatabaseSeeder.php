@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             MemorySeeder::class,
             WebClippingSeeder::class,
             MediaSeeder::class,
+            TagSeeder::class,
         ]);
     }
 }
