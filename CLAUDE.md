@@ -12,7 +12,7 @@ now.
 
 - **Backend:** Laravel 12 / PHP 8.2+
 - **Database:** SQLite (single file at `storage/database.sqlite`)
-- **Frontend:** Blade templates, Tailwind CSS v4, vanilla JS (no Vue/React/Livewire)
+- **Frontend:** Blade templates, plain CSS, vanilla JS (no Vue/React/Livewire)
 - **Build:** Vite 7 with `laravel-vite-plugin`
 - **Testing:** Pest v3 with `pest-plugin-laravel`
 - **Linting:** Laravel Pint
@@ -93,7 +93,7 @@ database/migrations/  — Schema definitions
 database/factories/   — Test data factories
 database/seeders/     — Database seeders
 resources/views/      — Blade templates (auth/login)
-resources/css/        — Tailwind entry point
+resources/css/        — CSS entry point
 resources/js/         — Minimal vanilla JS
 tests/Feature/        — Feature/integration tests
 tests/Unit/           — Unit tests

@@ -35,7 +35,7 @@ might shut down. I'm sure I could export the data, but then it would be a pain t
   needed, adding that would be trivial too.
 - **Vanilla CSS with Vite.** I was initially going to avoid any kind of build step or preprocessor for the sake of
   longevity, but Laravel comes with Vite out of the box. It's nice for development because of HMR, plus it handles
-  minification, prefixing, and cache busting. However, I'm going to use vanilla CSS for styling so they can be easily
+  minification, prefixing, and cache busting. However, I'm going to use vanilla CSS for styling so it can be easily
   migrated to something else or used without a build step at all.
 - **SQLite database.** Lightweight, portable, and plenty powerful enough for this project.
 - **Markdown saved in DB.** Memory text content will be Markdown so we get rich text, but stored in the DB for better
