@@ -1,5 +1,6 @@
 @import "pico.min.css";
+@import "variables.css";
+@import "layout.css";
 
-.container {
-    max-width: 30rem;
-}
+/*Templates*/
+@import "views/login.css";
