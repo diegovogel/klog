@@ -1,4 +1,6 @@
-<x-layouts.app>
+<x-layouts.public>
+    <x-slot:title>Log in - {{ config('app.name', 'Klog') }}</x-slot:title>
+
     <div class="login-wrapper">
         <h1 class="login-title">{{ config('app.name', 'Klog') }}</h1>
 
@@ -45,4 +47,4 @@
             </button>
         </form>
     </div>
-</x-layouts.app>
+</x-layouts.public>

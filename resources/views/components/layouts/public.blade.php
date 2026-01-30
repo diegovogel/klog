@@ -10,13 +10,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
-<header class="site-header">
-    <h1 class="site-header__title">{{config('app.name', 'Klog')}}</h1>
-</header>
-
 <main class="container">
-    <h1 class="page-title">{{$pageTitle}}</h1>
-
     {{$slot}}
 </main>
 </body>

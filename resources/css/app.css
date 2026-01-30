@@ -1,6 +1,7 @@
 @import "pico.min.css";
 @import "variables.css";
 @import "layout.css";
+@import "header-footer.css";
 
 /*Templates*/
 @import "views/login.css";
