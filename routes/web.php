@@ -14,7 +14,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/', function () {
         return view('memory-feed', [
-            'memories' => Memory::all(),
+            'memories' => Memory::latest('captured_at')->paginate(20),
         ]);
     });
 });

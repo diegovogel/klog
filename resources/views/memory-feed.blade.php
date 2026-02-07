@@ -4,6 +4,8 @@
     <x-slot:page-title>Feed</x-slot:page-title>
 
     @foreach($memories as $memory)
-        <h2>{{$memory->title}}</h2>
+        <x-memory-card :memory="$memory"/>
     @endforeach
+
+    {{ $memories->links() }}
 </x-layouts.app>

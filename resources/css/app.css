@@ -5,3 +5,6 @@
 
 /*Templates*/
 @import "views/login.css";
+
+/*Components*/
+@import "components/memory-card.css";

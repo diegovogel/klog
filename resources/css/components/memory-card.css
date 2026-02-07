@@ -1,0 +1,23 @@
+.memory-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.memory-card__audio-clips,
+.memory-card__images,
+.memory-card__videos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    margin-block-end: 1em;
+
+    & > * {
+        width: 45%;
+        max-width: 600px;
+        flex: 1;
+    }
+}
+
