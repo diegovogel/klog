@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('mime_type'); // MimeType enum.
             $table->unsignedBigInteger('size');
             $table->string('disk')->default('local');
-            $table->string('path')->unique();
+            $table->string('path')->index();
 
             $table->string('type'); // MediaType enum.
             $table->json('metadata')->nullable(); // Width, height, duration, etc.

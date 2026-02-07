@@ -6,9 +6,9 @@ use App\Enums\MediaType;
 use App\Enums\MimeType;
 use App\Models\Media;
 use App\Models\Memory;
+use Exception;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Str;
 
 class MediaFactory extends Factory
 {
@@ -16,14 +16,20 @@ class MediaFactory extends Factory
 
     public function definition(): array
     {
+        $mimeType = $this->faker->randomElement(MimeType::values());
+
+        $type = MimeType::mediaTypeFromMime($mimeType);
+
+        $fileName = $this->pickFilename($type);
+
         return [
             'filename' => $this->faker->uuid(),
-            'original_filename' => Str::slug($this->faker->words(3, true)),
-            'mime_type' => $this->faker->randomElement(MimeType::values()),
+            'original_filename' => $fileName,
+            'mime_type' => $mimeType,
             'size' => $this->faker->randomNumber(7, true),
-            'disk' => 'local',
-            'path' => $this->faker->filePath(),
-            'type' => $this->faker->randomElement(MediaType::values()),
+            'disk' => 'public',
+            'path' => $fileName,
+            'type' => $type,
             'metadata' => null,
             'order' => 0,
             'mediable_id' => Memory::factory(),
@@ -35,25 +41,56 @@ class MediaFactory extends Factory
 
     public function image(): static
     {
+        $type = MediaType::IMAGE->value;
+        $fileName = $this->pickFilename($type);
+
         return $this->state(fn (array $attributes) => [
-            'type' => MediaType::IMAGE->value,
+            'type' => $type,
             'mime_type' => MimeType::JPEG->value,
+            'filename' => $fileName,
+            'path' => $fileName,
         ]);
     }
 
     public function video(): static
     {
+        $type = MediaType::VIDEO->value;
+        $fileName = $this->pickFilename($type);
+
         return $this->state(fn (array $attributes) => [
-            'type' => MediaType::VIDEO->value,
-            'mime_type' => MimeType::MP4->value,
+            'type' => $type,
+            'mime_type' => MimeType::MOV->value,
+            'filename' => $fileName,
+            'path' => $fileName,
         ]);
     }
 
     public function audio(): static
     {
+        $type = MediaType::AUDIO->value;
+        $fileName = $this->pickFilename($type);
+
         return $this->state(fn (array $attributes) => [
-            'type' => MediaType::AUDIO->value,
-            'mime_type' => MimeType::MPEG->value,
+            'type' => $type,
+            'mime_type' => MimeType::M4A->value,
+            'filename' => $fileName,
+            'path' => $fileName,
         ]);
+    }
+
+    protected function pickFilename(string $type): string
+    {
+        return match ($type) {
+            MediaType::IMAGE->value => $this->faker->randomElement([
+                'sample-image-portrait.jpg',
+                'sample-image-landscape.jpg',
+            ]),
+            MediaType::VIDEO->value => $this->faker->randomElement([
+                'sample-video-portrait.MOV',
+                'sample-video-landscape.MOV',
+            ]),
+            MediaType::AUDIO->value => 'sample-audio.m4a',
+            default => throw new Exception('Unexpected media type: '.$type),
+        };
     }
 }
