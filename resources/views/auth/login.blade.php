@@ -8,9 +8,8 @@
               action="{{ route('login') }}">
             @csrf
 
-            <div class="form-group">
-                <label for="email"
-                       class="form-label">Email</label>
+            <div>
+                <label for="email">Email</label>
                 <input
                     id="email"
                     name="email"
@@ -19,31 +18,27 @@
                     required
                     autofocus
                     value="{{ old('email') }}"
-                    class="form-input"
                 >
                 @error('email')
-                <p class="form-error">{{ $message }}</p>
+                <p>{{ $message }}</p>
                 @enderror
             </div>
 
-            <div class="form-group">
-                <label for="password"
-                       class="form-label">Password</label>
+            <div>
+                <label for="password">Password</label>
                 <input
                     id="password"
                     name="password"
                     type="password"
                     autocomplete="current-password"
                     required
-                    class="form-input"
                 >
                 @error('password')
-                <p class="form-error">{{ $message }}</p>
+                <p>{{ $message }}</p>
                 @enderror
             </div>
 
-            <button type="submit"
-                    class="btn-submit">Log in
+            <button type="submit">Log in
             </button>
         </form>
     </div>

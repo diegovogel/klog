@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Requests\StoreMemoryRequest;
 use App\Models\Memory;
 use Illuminate\Support\Facades\Route;
 
@@ -22,7 +23,12 @@ Route::middleware('auth')->group(function () {
         return view('memories.create');
     })->name('memories.create');
 
-    Route::post('memories', function () {
-        // TODO: handle memory creation
+    Route::post('memories', function (StoreMemoryRequest $request) {
+        $memory = Memory::create([
+            'title' => $request->validated('title'),
+            'captured_at' => now(),
+        ]);
+
+        return redirect('/')->with('success', 'Memory saved.');
     })->name('memories.store');
 });
