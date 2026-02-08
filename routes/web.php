@@ -17,4 +17,12 @@ Route::middleware('auth')->group(function () {
             'memories' => Memory::latest('captured_at')->paginate(20),
         ]);
     });
+
+    Route::get('memories/create', function () {
+        return view('memories.create');
+    })->name('memories.create');
+
+    Route::post('memories', function () {
+        // TODO: handle memory creation
+    })->name('memories.store');
 });

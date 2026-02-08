@@ -1,17 +1,15 @@
 {
     "mcpServers": {
         "laravel-boost": {
-            "command": "/Users/diego/Library/Application",
+            "command": "/Users/diego/Library/Application Support/Herd/bin/php82",
             "args": [
-                "Support/Herd/bin/php82",
                 "/Users/diego/WebDev/Sites/Laravel/klog/artisan",
                 "boost:mcp"
             ]
         },
         "herd": {
-            "command": "/Users/diego/Library/Application",
+            "command": "/Users/diego/Library/Application Support/Herd/bin/php82",
             "args": [
-                "Support/Herd/bin/php82",
                 "/Applications/Herd.app/Contents/Resources/herd-mcp.phar"
             ],
             "env": {

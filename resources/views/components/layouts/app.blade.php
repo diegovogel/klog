@@ -11,7 +11,7 @@
 </head>
 <body>
 <header class="site-header">
-    <h1 class="site-header__title">{{config('app.name', 'Klog')}}</h1>
+    <a href="/"><h1 class="site-header__title">{{config('app.name', 'Klog')}}</h1></a>
 </header>
 
 <main class="container">

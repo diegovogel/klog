@@ -1,7 +1,6 @@
-<x-layouts.app>
-    <x-slot:title>Feed – {{ config('app.name', 'Klog') }}</x-slot:title>
-
-    <x-slot:page-title>Feed</x-slot:page-title>
+<x-layouts.app title="Feed – {{ config('app.name', 'Klog') }}"
+               page-title="Feed">
+    <a href="{{route('memories.create')}}">New Memory</a>
 
     @foreach($memories as $memory)
         <x-memory-card :memory="$memory"/>
