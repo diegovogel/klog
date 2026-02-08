@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Requests\StoreMemoryRequest;
 use App\Models\Memory;
+use App\Services\HtmlSanitizer;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -23,9 +24,10 @@ Route::middleware('auth')->group(function () {
         return view('memories.create');
     })->name('memories.create');
 
-    Route::post('memories', function (StoreMemoryRequest $request) {
+    Route::post('memories', function (StoreMemoryRequest $request, HtmlSanitizer $sanitizer) {
         $memory = Memory::create([
             'title' => $request->validated('title'),
+            'content' => $sanitizer->sanitize($request->validated('content')),
             'captured_at' => now(),
         ]);
 

@@ -65,4 +65,81 @@ describe('create memory', function () {
 
         expect(Memory::first()->captured_at)->not->toBeNull();
     });
+
+    it('stores a memory with content', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('memories.store'), [
+                'title' => 'Formatted note',
+                'content' => '<strong>Bold</strong> and <em>italic</em>',
+            ])
+            ->assertRedirect('/');
+
+        $memory = Memory::first();
+        expect($memory->content)->toBe('<strong>Bold</strong> and <em>italic</em>');
+    });
+
+    it('stores a memory with content but no title', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('memories.store'), [
+                'content' => 'Just a thought.',
+            ])
+            ->assertRedirect('/');
+
+        $memory = Memory::first();
+        expect($memory->title)->toBeNull()
+            ->and($memory->content)->toBe('Just a thought.');
+    });
+
+    it('rejects content longer than 65535 characters', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('memories.store'), [
+                'content' => str_repeat('a', 65536),
+            ])
+            ->assertSessionHasErrors('content');
+
+        expect(Memory::count())->toBe(0);
+    });
+
+    it('sanitizes HTML content before storing', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('memories.store'), [
+                'title' => 'XSS test',
+                'content' => '<strong>safe</strong><script>alert(1)</script>',
+            ])
+            ->assertRedirect('/');
+
+        $memory = Memory::first();
+        expect($memory->content)->toBe('<strong>safe</strong>alert(1)');
+    });
+
+    it('renders content as HTML on the feed', function () {
+        $user = User::factory()->create();
+
+        Memory::factory()->create([
+            'content' => '<strong>Bold</strong> and <em>italic</em>',
+        ]);
+
+        $response = $this->actingAs($user)->get('/');
+
+        $response->assertSuccessful()
+            ->assertSee('<strong>Bold</strong> and <em>italic</em>', false);
+    });
+
+    it('shows the content editor on the create form', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('memories.create'))
+            ->assertSuccessful()
+            ->assertSee('Content')
+            ->assertSee('data-rich-editor', false);
+    });
 });

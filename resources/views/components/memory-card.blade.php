@@ -8,7 +8,7 @@
     </header>
 
     @if($memory->content)
-        <p class="memory-card__text">{{$memory->content}}</p>
+        <div class="memory-card__text">{!! $memory->content !!}</div>
     @endif
 
     @foreach($webClippings as $webClipping)

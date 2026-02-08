@@ -20,6 +20,8 @@
             @enderror
         </div>
 
+        <x-rich-editor name="content" label="Content" :value="old('content')" />
+
         <button type="submit">Save Memory
         </button>
     </form>

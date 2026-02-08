@@ -1,0 +1,48 @@
+.rich-editor {
+    border: 1px solid var(--pico-form-element-border-color);
+    border-radius: var(--pico-border-radius);
+    overflow: hidden;
+}
+
+.rich-editor__toolbar {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--pico-form-element-border-color);
+    background: var(--pico-form-element-background-color);
+    padding: 0.25rem;
+
+    & button {
+        all: unset;
+        cursor: pointer;
+        padding: 0.25rem 0.5rem;
+        border-radius: var(--pico-border-radius);
+        line-height: 1;
+        font-size: 0.875rem;
+        color: var(--pico-color);
+
+        &:hover {
+            background: var(--pico-secondary-hover-background);
+        }
+
+        &.is-active {
+            background: var(--pico-primary-background);
+            color: var(--pico-primary-inverse);
+        }
+    }
+}
+
+.rich-editor__content {
+    min-height: 8rem;
+    padding: var(--pico-form-element-spacing-vertical) var(--pico-form-element-spacing-horizontal);
+    outline: none;
+    line-height: var(--pico-line-height);
+
+    &:focus {
+        border-color: var(--pico-form-element-active-border-color);
+    }
+
+    & a {
+        color: var(--pico-primary);
+        text-decoration: underline;
+    }
+}
