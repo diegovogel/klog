@@ -3,6 +3,7 @@
 
     <form method="POST"
           action="{{ route('memories.store') }}"
+          enctype="multipart/form-data"
           class="memory-form">
         @csrf
 
@@ -21,6 +22,8 @@
         </div>
 
         <x-rich-editor name="content" label="Content" :value="old('content')" />
+
+        <x-media-upload name="media" label="Media" />
 
         <button type="submit">Save Memory
         </button>

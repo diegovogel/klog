@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Requests\StoreMemoryRequest;
 use App\Models\Memory;
 use App\Services\HtmlSanitizer;
+use App\Services\MediaStorageService;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -24,12 +25,16 @@ Route::middleware('auth')->group(function () {
         return view('memories.create');
     })->name('memories.create');
 
-    Route::post('memories', function (StoreMemoryRequest $request, HtmlSanitizer $sanitizer) {
+    Route::post('memories', function (StoreMemoryRequest $request, HtmlSanitizer $sanitizer, MediaStorageService $mediaStorage) {
         $memory = Memory::create([
             'title' => $request->validated('title'),
             'content' => $sanitizer->sanitize($request->validated('content')),
             'captured_at' => now(),
         ]);
+
+        if ($request->hasFile('media')) {
+            $mediaStorage->storeForMemory($memory, $request->file('media'));
+        }
 
         return redirect('/')->with('success', 'Memory saved.');
     })->name('memories.store');
