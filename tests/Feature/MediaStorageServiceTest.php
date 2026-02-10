@@ -6,19 +6,19 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
-    Storage::fake('public');
+    Storage::fake('local');
     $this->service = new MediaStorageService;
 });
 
 describe('MediaStorageService', function () {
-    it('stores a file to the public disk', function () {
+    it('stores a file to the local disk', function () {
         $memory = Memory::factory()->create();
         $file = UploadedFile::fake()->image('photo.jpg');
 
         $results = $this->service->storeForMemory($memory, [$file]);
 
         expect($results)->toHaveCount(1);
-        Storage::disk('public')->assertExists($results[0]->path);
+        Storage::disk('local')->assertExists($results[0]->path);
     });
 
     it('generates a UUID-based filename', function () {

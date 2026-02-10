@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\MediaController;
 use App\Http\Requests\StoreMemoryRequest;
 use App\Models\Memory;
 use App\Services\HtmlSanitizer;
@@ -14,6 +15,8 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('logout', [LoginController::class, 'logout'])->name('logout');
+
+    Route::get('media/{filename}', [MediaController::class, 'show'])->name('media.show');
 
     Route::get('/', function () {
         return view('memory-feed', [

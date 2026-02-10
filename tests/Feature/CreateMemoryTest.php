@@ -156,7 +156,7 @@ describe('create memory', function () {
     });
 
     it('stores a memory with an uploaded image', function () {
-        Storage::fake('public');
+        Storage::fake('local');
         $user = User::factory()->create();
 
         $file = UploadedFile::fake()->image('beach.jpg', 640, 480)->size(500);
@@ -175,14 +175,14 @@ describe('create memory', function () {
         expect($media->original_filename)->toBe('beach.jpg')
             ->and($media->mime_type)->toBe('image/jpeg')
             ->and($media->type)->toBe('image')
-            ->and($media->disk)->toBe('public')
+            ->and($media->disk)->toBe('local')
             ->and($media->order)->toBe(0);
 
-        Storage::disk('public')->assertExists($media->path);
+        Storage::disk('local')->assertExists($media->path);
     });
 
     it('stores multiple media files with correct ordering', function () {
-        Storage::fake('public');
+        Storage::fake('local');
         $user = User::factory()->create();
 
         $image = UploadedFile::fake()->image('photo.jpg');
@@ -204,7 +204,7 @@ describe('create memory', function () {
     });
 
     it('stores files in the uploads path', function () {
-        Storage::fake('public');
+        Storage::fake('local');
         $user = User::factory()->create();
 
         $file = UploadedFile::fake()->image('test.jpg');
@@ -220,7 +220,7 @@ describe('create memory', function () {
     });
 
     it('rejects files with unsupported MIME types', function () {
-        Storage::fake('public');
+        Storage::fake('local');
         $user = User::factory()->create();
 
         $file = UploadedFile::fake()->create('doc.pdf', 100, 'application/pdf');
@@ -236,7 +236,7 @@ describe('create memory', function () {
     });
 
     it('rejects files exceeding the maximum size', function () {
-        Storage::fake('public');
+        Storage::fake('local');
         $user = User::factory()->create();
 
         $file = UploadedFile::fake()->image('huge.jpg')->size(103424);
@@ -252,7 +252,7 @@ describe('create memory', function () {
     });
 
     it('rejects more than 20 files', function () {
-        Storage::fake('public');
+        Storage::fake('local');
         $user = User::factory()->create();
 
         $files = array_map(
@@ -282,7 +282,7 @@ describe('create memory', function () {
     });
 
     it('derives correct media type from video MIME', function () {
-        Storage::fake('public');
+        Storage::fake('local');
         $user = User::factory()->create();
 
         $video = UploadedFile::fake()->create('clip.mp4', 5000, 'video/mp4');

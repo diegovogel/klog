@@ -39,6 +39,8 @@ php artisan user:reset-password  # Reset a user's password (interactive)
 - **Soft deletes** on all core entities (Memory, Media, Tag, WebClipping)
 - **No denormalized type column** — `Memory->types` is computed from relationships (content, media, web clippings)
 - **Polymorphic media** — `Media` attaches to `Memory` and `WebClipping` via `mediable_type`/`mediable_id`
+- **Private media storage** — media files are stored on the `local` disk (`storage/app/private/`) and served through
+  an auth-protected `MediaController`. No public symlink. URLs use `route('media.show', $filename)`
 - **Simple auth** — session-based login, no registration, no password reset flow, no 2FA. Users are created via
   `php artisan user:create`. All routes require authentication except `/login`
 
@@ -83,9 +85,9 @@ php artisan user:reset-password  # Reset a user's password (interactive)
 ## Project Structure
 
 ```
-app/Console/Commands/ — Artisan commands (user:create, user:reset-password)
+app/Console/Commands/ — Artisan commands (user:create, user:reset-password, media:migrate-to-private)
 app/Enums/            — PHP enums (MemoryType, MediaType, MimeType)
-app/Http/Controllers/ — Controllers (Auth/LoginController)
+app/Http/Controllers/ — Controllers (Auth/LoginController, MediaController)
 app/Http/Requests/    — Form request validation (Auth/LoginRequest)
 app/Models/           — Eloquent models
 app/Services/         — Business logic

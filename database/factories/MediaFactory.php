@@ -27,7 +27,7 @@ class MediaFactory extends Factory
             'original_filename' => $fileName,
             'mime_type' => $mimeType,
             'size' => $this->faker->randomNumber(7, true),
-            'disk' => 'public',
+            'disk' => 'local',
             'path' => $fileName,
             'type' => $type,
             'metadata' => null,

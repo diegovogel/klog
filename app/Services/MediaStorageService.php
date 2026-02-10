@@ -11,7 +11,7 @@ use Illuminate\Support\Str;
 
 class MediaStorageService
 {
-    private const DISK = 'public';
+    private const DISK = 'local';
 
     /**
      * Store uploaded files and attach them as Media to the given Memory.
