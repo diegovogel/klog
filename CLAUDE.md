@@ -62,7 +62,7 @@ php artisan user:reset-password  # Reset a user's password (interactive)
 
 - `MemoryType` — photo, video, audio, webclip, text
 - `MediaType` — image, video, audio
-- `MimeType` — JPEG, MP4, MPEG
+- `MimeType` — JPEG, PNG, GIF, WEBP, HEIC, HEIF, AVIF, MOV, MP4, WEBM_VIDEO, MPEG, WAV, M4A, WEBM_AUDIO
 
 ## Coding Conventions
 

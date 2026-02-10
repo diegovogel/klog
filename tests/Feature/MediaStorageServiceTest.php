@@ -86,4 +86,30 @@ describe('MediaStorageService', function () {
 
         expect($results[0]->type)->toBe('image');
     });
+
+    it('resolves audio/webm when client reports audio but finfo detects video/webm', function () {
+        $memory = Memory::factory()->create();
+
+        // Simulate a browser-captured audio file: the client says audio/webm
+        // but PHP's finfo detects the WebM container as video/webm.
+        $file = UploadedFile::fake()->create('audio-recording.webm', 500, 'audio/webm');
+
+        $results = $this->service->storeForMemory($memory, [$file]);
+
+        expect($results[0]->mime_type)->toBe('audio/webm')
+            ->and($results[0]->type)->toBe('audio');
+    });
+
+    it('resolves audio/mp4 when client reports audio but finfo detects video/mp4', function () {
+        $memory = Memory::factory()->create();
+
+        // Safari records audio as audio/mp4, but PHP's finfo detects
+        // the MP4 container as video/mp4.
+        $file = UploadedFile::fake()->create('audio-recording.mp4', 500, 'audio/mp4');
+
+        $results = $this->service->storeForMemory($memory, [$file]);
+
+        expect($results[0]->mime_type)->toBe('audio/mp4')
+            ->and($results[0]->type)->toBe('audio');
+    });
 });

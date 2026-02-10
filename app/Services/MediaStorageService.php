@@ -30,6 +30,32 @@ class MediaStorageService
         return $mediaRecords;
     }
 
+    /**
+     * Resolve the MIME type for an uploaded file.
+     *
+     * PHP's finfo detects audio-only files in video containers (WebM, MP4)
+     * as video/* because it sees the container format, not the tracks.
+     * When the client reports an audio/* MIME and finfo says video/* for the
+     * same container, we trust the client since validation already confirmed
+     * the MIME type is in our allowed list.
+     */
+    private function resolveMimeType(UploadedFile $file): string
+    {
+        $detected = $file->getMimeType();
+        $clientMime = $file->getClientMimeType();
+
+        $audioOverrides = [
+            'video/webm' => 'audio/webm',
+            'video/mp4' => 'audio/mp4',
+        ];
+
+        if (isset($audioOverrides[$detected]) && $clientMime === $audioOverrides[$detected]) {
+            return $clientMime;
+        }
+
+        return $detected;
+    }
+
     private function storeFile(Memory $memory, UploadedFile $file, int $order): Media
     {
         $uuid = Str::uuid()->toString();
@@ -42,7 +68,7 @@ class MediaStorageService
 
         Storage::disk(self::DISK)->putFileAs($directory, $file, $filename);
 
-        $mimeType = $file->getMimeType();
+        $mimeType = $this->resolveMimeType($file);
 
         return $memory->media()->create([
             'filename' => $uuid,

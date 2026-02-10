@@ -42,6 +42,13 @@ document.querySelectorAll('[data-media-upload]').forEach(upload => {
         addFiles(e.dataTransfer.files)
     })
 
+    // Accept files from media-capture component
+    upload.addEventListener('media-capture', e => {
+        if (e.detail && e.detail.file) {
+            addFiles([e.detail.file])
+        }
+    })
+
     function addFiles (fileList) {
         for (const file of fileList) {
             if (dataTransfer.files.length >= max) break

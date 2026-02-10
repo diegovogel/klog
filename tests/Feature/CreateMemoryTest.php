@@ -293,4 +293,46 @@ describe('create memory', function () {
         $media = Memory::first()->media->first();
         expect($media->type)->toBe('video');
     });
+
+    it('stores a captured WebM video', function () {
+        Storage::fake('local');
+        $user = User::factory()->create();
+
+        $file = UploadedFile::fake()->create('video-20260209-143000.webm', 2000, 'video/webm');
+
+        $this->actingAs($user)
+            ->post(route('memories.store'), [
+                'title' => 'Recorded moment',
+                'media' => [$file],
+            ])
+            ->assertRedirect('/');
+
+        $media = Memory::first()->media->first();
+        expect($media->mime_type)->toBe('video/webm')
+            ->and($media->type)->toBe('video')
+            ->and($media->disk)->toBe('local');
+
+        Storage::disk('local')->assertExists($media->path);
+    });
+
+    it('stores a captured WebM audio recording', function () {
+        Storage::fake('local');
+        $user = User::factory()->create();
+
+        $file = UploadedFile::fake()->create('audio-20260209-143000.webm', 500, 'audio/webm');
+
+        $this->actingAs($user)
+            ->post(route('memories.store'), [
+                'title' => 'Voice note',
+                'media' => [$file],
+            ])
+            ->assertRedirect('/');
+
+        $media = Memory::first()->media->first();
+        expect($media->mime_type)->toBe('audio/webm')
+            ->and($media->type)->toBe('audio')
+            ->and($media->disk)->toBe('local');
+
+        Storage::disk('local')->assertExists($media->path);
+    });
 });

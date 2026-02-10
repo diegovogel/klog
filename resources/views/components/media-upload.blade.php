@@ -22,6 +22,8 @@
         <small data-media-upload-counter class="media-upload__counter" hidden>
             <span data-media-upload-count>0</span> / {{ $max }} files
         </small>
+
+        <x-media-capture />
     </div>
     @error($name)
     <p>{{ $message }}</p>
