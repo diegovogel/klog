@@ -57,7 +57,7 @@ describe('create memory', function () {
         expect(Memory::count())->toBe(0);
     });
 
-    it('sets captured_at when creating a memory', function () {
+    it('sets memory_date when creating a memory', function () {
         $user = User::factory()->create();
 
         $this->actingAs($user)
@@ -65,7 +65,7 @@ describe('create memory', function () {
                 'title' => 'Sunset',
             ]);
 
-        expect(Memory::first()->captured_at)->not->toBeNull();
+        expect(Memory::first()->memory_date)->not->toBeNull();
     });
 
     it('stores a memory with content', function () {

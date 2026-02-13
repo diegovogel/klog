@@ -32,7 +32,7 @@ Route::middleware('auth')->group(function () {
         $memory = Memory::create([
             'title' => $request->validated('title'),
             'content' => $sanitizer->sanitize($request->validated('content')),
-            'captured_at' => now(),
+            'memory_date' => now(),
         ]);
 
         if ($request->hasFile('media')) {

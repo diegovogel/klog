@@ -20,11 +20,11 @@ class Memory extends Model
     protected $fillable = [
         'title',
         'content',
-        'captured_at',
+        'memory_date',
     ];
 
     protected $casts = [
-        'captured_at' => 'datetime',
+        'memory_date' => 'datetime',
     ];
 
     /**

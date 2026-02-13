@@ -13,7 +13,7 @@ class MemorySeeder extends Seeder
         for ($i = 0; $i < 400; $i++) {
             $date = now()->subDays($i);
             Memory::factory()->create([
-                'captured_at' => $date,
+                'memory_date' => $date,
                 'created_at' => $date,
                 'updated_at' => $date,
             ]);

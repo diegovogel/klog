@@ -37,7 +37,7 @@ class MediaFactory extends Factory
             'order' => 0,
             'mediable_id' => Memory::factory(),
             'mediable_type' => (new Memory)->getMorphClass(),
-            'created_at' => $dateTime,
+            'created_at' => $dateTime->getTimestamp(),
             'updated_at' => Carbon::now(),
         ];
     }

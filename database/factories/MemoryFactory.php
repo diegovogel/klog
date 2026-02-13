@@ -13,11 +13,13 @@ class MemoryFactory extends Factory
 
     public function definition(): array
     {
+        $date = $this->faker->dateTimeBetween('-5 years', 'now');
+
         return [
             'title' => Str::title($this->faker->words(rand(1, 5), true)),
             'content' => $this->faker->paragraph(rand(0, 4)),
-            'captured_at' => Carbon::now(),
-            'created_at' => Carbon::now(),
+            'memory_date' => $date,
+            'created_at' => $date->getTimestamp(),
             'updated_at' => Carbon::now(),
         ];
     }
