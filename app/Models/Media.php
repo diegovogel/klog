@@ -18,6 +18,7 @@ class Media extends Model
         'filename',
         'original_filename',
         'mime_type',
+        'captured_at',
         'size',
         'disk',
         'path',

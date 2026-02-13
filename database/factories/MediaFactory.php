@@ -22,10 +22,13 @@ class MediaFactory extends Factory
 
         $fileName = $this->pickFilename($type);
 
+        $dateTime = $this->faker->dateTimeBetween('-5 year', 'now');
+
         return [
             'filename' => $this->faker->uuid(),
             'original_filename' => $fileName,
             'mime_type' => $mimeType,
+            'captured_at' => $dateTime,
             'size' => $this->faker->randomNumber(7, true),
             'disk' => 'local',
             'path' => $fileName,
@@ -34,7 +37,7 @@ class MediaFactory extends Factory
             'order' => 0,
             'mediable_id' => Memory::factory(),
             'mediable_type' => (new Memory)->getMorphClass(),
-            'created_at' => Carbon::now(),
+            'created_at' => $dateTime,
             'updated_at' => Carbon::now(),
         ];
     }
