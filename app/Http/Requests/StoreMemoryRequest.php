@@ -19,6 +19,7 @@ class StoreMemoryRequest extends FormRequest
     {
         return [
             'title' => ['nullable', 'string', 'max:255'],
+            'memory_date' => ['required', 'date', 'before_or_equal:today'],
             'content' => ['nullable', 'string', 'max:65535'],
             'media' => ['nullable', 'array', 'max:20'],
             'media.*' => [

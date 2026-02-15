@@ -27,6 +27,7 @@ describe('create memory', function () {
         $this->actingAs($user)
             ->post(route('memories.store'), [
                 'title' => 'Beach day',
+                'memory_date' => '2026-02-15',
             ])
             ->assertRedirect('/');
 
@@ -39,6 +40,7 @@ describe('create memory', function () {
         $this->actingAs($user)
             ->post(route('memories.store'), [
                 'title' => null,
+                'memory_date' => '2026-02-15',
             ])
             ->assertRedirect('/');
 
@@ -51,21 +53,58 @@ describe('create memory', function () {
         $this->actingAs($user)
             ->post(route('memories.store'), [
                 'title' => str_repeat('a', 256),
+                'memory_date' => '2026-02-15',
             ])
             ->assertSessionHasErrors('title');
 
         expect(Memory::count())->toBe(0);
     });
 
-    it('sets memory_date when creating a memory', function () {
+    it('stores the submitted memory_date', function () {
         $user = User::factory()->create();
 
         $this->actingAs($user)
             ->post(route('memories.store'), [
                 'title' => 'Sunset',
+                'memory_date' => '2025-06-15',
             ]);
 
-        expect(Memory::first()->memory_date)->not->toBeNull();
+        expect(Memory::first()->memory_date->format('Y-m-d'))->toBe('2025-06-15');
+    });
+
+    it('defaults memory_date to today on the create form', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('memories.create'))
+            ->assertSuccessful()
+            ->assertSee('name="memory_date"', false)
+            ->assertSee('value="'.now()->format('Y-m-d').'"', false);
+    });
+
+    it('requires memory_date', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('memories.store'), [
+                'title' => 'No date',
+            ])
+            ->assertSessionHasErrors('memory_date');
+
+        expect(Memory::count())->toBe(0);
+    });
+
+    it('rejects a future memory_date', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('memories.store'), [
+                'title' => 'Future',
+                'memory_date' => now()->addDay()->format('Y-m-d'),
+            ])
+            ->assertSessionHasErrors('memory_date');
+
+        expect(Memory::count())->toBe(0);
     });
 
     it('stores a memory with content', function () {
@@ -75,6 +114,7 @@ describe('create memory', function () {
             ->post(route('memories.store'), [
                 'title' => 'Formatted note',
                 'content' => '<strong>Bold</strong> and <em>italic</em>',
+                'memory_date' => '2026-02-15',
             ])
             ->assertRedirect('/');
 
@@ -88,6 +128,7 @@ describe('create memory', function () {
         $this->actingAs($user)
             ->post(route('memories.store'), [
                 'content' => 'Just a thought.',
+                'memory_date' => '2026-02-15',
             ])
             ->assertRedirect('/');
 
@@ -102,6 +143,7 @@ describe('create memory', function () {
         $this->actingAs($user)
             ->post(route('memories.store'), [
                 'content' => str_repeat('a', 65536),
+                'memory_date' => '2026-02-15',
             ])
             ->assertSessionHasErrors('content');
 
@@ -115,6 +157,7 @@ describe('create memory', function () {
             ->post(route('memories.store'), [
                 'title' => 'XSS test',
                 'content' => '<strong>safe</strong><script>alert(1)</script>',
+                'memory_date' => '2026-02-15',
             ])
             ->assertRedirect('/');
 
@@ -164,6 +207,7 @@ describe('create memory', function () {
         $this->actingAs($user)
             ->post(route('memories.store'), [
                 'title' => 'Beach day',
+                'memory_date' => '2026-02-15',
                 'media' => [$file],
             ])
             ->assertRedirect('/');
@@ -191,6 +235,7 @@ describe('create memory', function () {
         $this->actingAs($user)
             ->post(route('memories.store'), [
                 'title' => 'Mixed media',
+                'memory_date' => '2026-02-15',
                 'media' => [$image, $audio],
             ])
             ->assertRedirect('/');
@@ -210,7 +255,10 @@ describe('create memory', function () {
         $file = UploadedFile::fake()->image('test.jpg');
 
         $this->actingAs($user)
-            ->post(route('memories.store'), ['media' => [$file]]);
+            ->post(route('memories.store'), [
+                'memory_date' => '2026-02-15',
+                'media' => [$file],
+            ]);
 
         $media = Memory::first()->media->first();
         $now = now();
@@ -228,6 +276,7 @@ describe('create memory', function () {
         $this->actingAs($user)
             ->post(route('memories.store'), [
                 'title' => 'Bad file',
+                'memory_date' => '2026-02-15',
                 'media' => [$file],
             ])
             ->assertSessionHasErrors('media.0');
@@ -244,6 +293,7 @@ describe('create memory', function () {
         $this->actingAs($user)
             ->post(route('memories.store'), [
                 'title' => 'Too big',
+                'memory_date' => '2026-02-15',
                 'media' => [$file],
             ])
             ->assertSessionHasErrors('media.0');
@@ -263,6 +313,7 @@ describe('create memory', function () {
         $this->actingAs($user)
             ->post(route('memories.store'), [
                 'title' => 'Too many',
+                'memory_date' => '2026-02-15',
                 'media' => $files,
             ])
             ->assertSessionHasErrors('media');
@@ -274,6 +325,7 @@ describe('create memory', function () {
         $this->actingAs($user)
             ->post(route('memories.store'), [
                 'title' => 'Text only',
+                'memory_date' => '2026-02-15',
             ])
             ->assertRedirect('/');
 
@@ -288,7 +340,10 @@ describe('create memory', function () {
         $video = UploadedFile::fake()->create('clip.mp4', 5000, 'video/mp4');
 
         $this->actingAs($user)
-            ->post(route('memories.store'), ['media' => [$video]]);
+            ->post(route('memories.store'), [
+                'memory_date' => '2026-02-15',
+                'media' => [$video],
+            ]);
 
         $media = Memory::first()->media->first();
         expect($media->type)->toBe('video');
@@ -303,6 +358,7 @@ describe('create memory', function () {
         $this->actingAs($user)
             ->post(route('memories.store'), [
                 'title' => 'Recorded moment',
+                'memory_date' => '2026-02-15',
                 'media' => [$file],
             ])
             ->assertRedirect('/');
@@ -324,6 +380,7 @@ describe('create memory', function () {
         $this->actingAs($user)
             ->post(route('memories.store'), [
                 'title' => 'Voice note',
+                'memory_date' => '2026-02-15',
                 'media' => [$file],
             ])
             ->assertRedirect('/');

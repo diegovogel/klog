@@ -20,7 +20,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/', function () {
         return view('memory-feed', [
-            'memories' => Memory::latest('captured_at')->paginate(20),
+            'memories' => Memory::latest('memory_date')->paginate(20),
         ]);
     });
 
@@ -32,7 +32,7 @@ Route::middleware('auth')->group(function () {
         $memory = Memory::create([
             'title' => $request->validated('title'),
             'content' => $sanitizer->sanitize($request->validated('content')),
-            'memory_date' => now(),
+            'memory_date' => $request->validated('memory_date'),
         ]);
 
         if ($request->hasFile('media')) {

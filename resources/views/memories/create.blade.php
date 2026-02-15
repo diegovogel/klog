@@ -21,6 +21,19 @@
             @enderror
         </div>
 
+        <div>
+            <label for="memory_date">Date</label>
+            <input
+                id="memory_date"
+                name="memory_date"
+                type="date"
+                value="{{ old('memory_date', now()->format('Y-m-d')) }}"
+            >
+            @error('memory_date')
+            <p>{{ $message }}</p>
+            @enderror
+        </div>
+
         <x-rich-editor name="content" label="Content" :value="old('content')" />
 
         <x-media-upload name="media" label="Media" />
