@@ -25,7 +25,11 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('memories/create', function () {
-        return view('memories.create');
+        $latestMemoryDate = Memory::max('memory_date');
+
+        return view('memories.create', [
+            'latestMemoryDate' => $latestMemoryDate,
+        ]);
     })->name('memories.create');
 
     Route::post('memories', function (StoreMemoryRequest $request, HtmlSanitizer $sanitizer, MediaStorageService $mediaStorage) {

@@ -28,7 +28,11 @@
                 name="memory_date"
                 type="date"
                 value="{{ old('memory_date', now()->format('Y-m-d')) }}"
+                @if($latestMemoryDate) data-latest-memory-date="{{ \Illuminate\Support\Carbon::parse($latestMemoryDate)->format('Y-m-d') }}" @endif
             >
+            <small id="memory-date-warning" hidden>
+                Heads up! There are memories after this date, so this memory won't be at the top of the feed.
+            </small>
             @error('memory_date')
             <p>{{ $message }}</p>
             @enderror
