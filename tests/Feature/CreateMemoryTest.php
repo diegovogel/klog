@@ -392,4 +392,154 @@ describe('create memory', function () {
 
         Storage::disk('local')->assertExists($media->path);
     });
+
+    it('shows the web clippings repeater on the create form', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('memories.create'))
+            ->assertSuccessful()
+            ->assertSee('Web Clippings')
+            ->assertSee('data-web-clippings', false);
+    });
+
+    it('stores a memory with web clippings', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('memories.store'), [
+                'title' => 'Bookmarks',
+                'memory_date' => '2026-02-15',
+                'clippings' => [
+                    'https://example.com/article',
+                    'https://laravel.com/docs',
+                ],
+            ])
+            ->assertRedirect('/');
+
+        $memory = Memory::first();
+        expect($memory->webClippings)->toHaveCount(2);
+
+        $urls = $memory->webClippings->pluck('url')->all();
+        expect($urls)->toContain('https://example.com/article')
+            ->toContain('https://laravel.com/docs');
+    });
+
+    it('stores a memory without clippings', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('memories.store'), [
+                'title' => 'No links',
+                'memory_date' => '2026-02-15',
+            ])
+            ->assertRedirect('/');
+
+        expect(Memory::first()->webClippings)->toHaveCount(0);
+    });
+
+    it('rejects invalid clipping URLs', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('memories.store'), [
+                'title' => 'Bad URL',
+                'memory_date' => '2026-02-15',
+                'clippings' => ['not-a-url'],
+            ])
+            ->assertSessionHasErrors('clippings.0');
+
+        expect(Memory::count())->toBe(0);
+    });
+
+    it('rejects clipping URLs exceeding 2048 characters', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('memories.store'), [
+                'title' => 'Long URL',
+                'memory_date' => '2026-02-15',
+                'clippings' => ['https://example.com/'.str_repeat('a', 2040)],
+            ])
+            ->assertSessionHasErrors('clippings.0');
+
+        expect(Memory::count())->toBe(0);
+    });
+
+    it('strips empty clipping rows before validation', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('memories.store'), [
+                'title' => 'With blanks',
+                'memory_date' => '2026-02-15',
+                'clippings' => ['', 'https://example.com', '', null],
+            ])
+            ->assertRedirect('/');
+
+        $memory = Memory::first();
+        expect($memory->webClippings)->toHaveCount(1)
+            ->and($memory->webClippings->first()->url)->toBe('https://example.com');
+    });
+
+    it('succeeds when all clipping rows are empty', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('memories.store'), [
+                'title' => 'All blank clippings',
+                'memory_date' => '2026-02-15',
+                'clippings' => ['', '', null],
+            ])
+            ->assertRedirect('/');
+
+        expect(Memory::first()->webClippings)->toHaveCount(0);
+    });
+
+    it('shows a global error banner when validation fails', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->from(route('memories.create'))
+            ->post(route('memories.store'), [
+                'title' => str_repeat('a', 256),
+                'memory_date' => '2026-02-15',
+            ])
+            ->assertRedirect(route('memories.create'))
+            ->assertSessionHasErrors('title');
+
+        $this->actingAs($user)
+            ->get(route('memories.create'))
+            ->assertSee('There were problems with some of the memory info');
+    });
+
+    it('does not show the error banner on a fresh create form', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('memories.create'))
+            ->assertDontSee('There were problems');
+    });
+
+    it('stores a memory with clippings and media together', function () {
+        Storage::fake('local');
+        $user = User::factory()->create();
+
+        $file = UploadedFile::fake()->image('photo.jpg');
+
+        $this->actingAs($user)
+            ->post(route('memories.store'), [
+                'title' => 'Full memory',
+                'content' => '<p>Great day</p>',
+                'memory_date' => '2026-02-15',
+                'media' => [$file],
+                'clippings' => ['https://example.com'],
+            ])
+            ->assertRedirect('/');
+
+        $memory = Memory::first();
+        expect($memory->media)->toHaveCount(1)
+            ->and($memory->webClippings)->toHaveCount(1)
+            ->and($memory->content)->not->toBeEmpty();
+    });
 });

@@ -43,6 +43,10 @@ Route::middleware('auth')->group(function () {
             $mediaStorage->storeForMemory($memory, $request->file('media'));
         }
 
+        foreach ($request->validated('clippings', []) as $url) {
+            $memory->webClippings()->create(['url' => $url]);
+        }
+
         return redirect('/')->with('success', 'Memory saved.');
     })->name('memories.store');
 });

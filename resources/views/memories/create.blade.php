@@ -7,6 +7,10 @@
           class="memory-form">
         @csrf
 
+        @if ($errors->any())
+            <p role="alert">There were problems with some of the memory info. Please see below.</p>
+        @endif
+
         <div>
             <label for="title">Title</label>
             <input
@@ -41,6 +45,8 @@
         <x-rich-editor name="content" label="Content" :value="old('content')" />
 
         <x-media-upload name="media" label="Media" />
+
+        <x-web-clippings />
 
         <button type="submit">Save Memory
         </button>

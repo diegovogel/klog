@@ -1,0 +1,39 @@
+.web-clippings__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.web-clippings__list:not(:empty) {
+    margin-block-end: 0.5rem;
+}
+
+.web-clippings__row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.web-clippings__input {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.web-clippings__remove {
+    all: unset;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--pico-del-color, #c62828);
+    color: white;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.web-clippings__add {
+    margin-bottom: 0;
+}
