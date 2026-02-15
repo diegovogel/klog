@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Memory;
+use App\Models\WebClipping;
 use App\Services\MediaStorageService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -111,5 +112,71 @@ describe('MediaStorageService', function () {
 
         expect($results[0]->mime_type)->toBe('audio/mp4')
             ->and($results[0]->type)->toBe('audio');
+    });
+});
+
+describe('storeScreenshotForClipping', function () {
+    it('stores a screenshot file and creates a Media record', function () {
+        $clipping = WebClipping::factory()->create();
+        $tempPath = tempnam(sys_get_temp_dir(), 'klog_test_');
+        file_put_contents($tempPath, str_repeat('x', 1024));
+
+        $media = $this->service->storeScreenshotForClipping($clipping, $tempPath);
+
+        expect($media)->not->toBeNull()
+            ->and($media->original_filename)->toBe('screenshot.png')
+            ->and($media->mime_type)->toBe('image/png')
+            ->and($media->type)->toBe('image')
+            ->and($media->disk)->toBe('local')
+            ->and($media->size)->toBe(1024)
+            ->and($media->order)->toBe(0);
+
+        Storage::disk('local')->assertExists($media->path);
+
+        @unlink($tempPath);
+    });
+
+    it('generates a UUID-based filename for screenshots', function () {
+        $clipping = WebClipping::factory()->create();
+        $tempPath = tempnam(sys_get_temp_dir(), 'klog_test_');
+        file_put_contents($tempPath, 'fake-png');
+
+        $media = $this->service->storeScreenshotForClipping($clipping, $tempPath);
+
+        expect($media->filename)
+            ->toMatch('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/');
+
+        @unlink($tempPath);
+    });
+
+    it('stores screenshots in the uploads/{year}/{month}/ path', function () {
+        $clipping = WebClipping::factory()->create();
+        $tempPath = tempnam(sys_get_temp_dir(), 'klog_test_');
+        file_put_contents($tempPath, 'fake-png');
+
+        $media = $this->service->storeScreenshotForClipping($clipping, $tempPath);
+
+        $now = now();
+        $expectedPrefix = sprintf('uploads/%s/%s/', $now->format('Y'), $now->format('m'));
+
+        expect($media->path)->toStartWith($expectedPrefix)
+            ->and($media->path)->toEndWith('.png');
+
+        @unlink($tempPath);
+    });
+
+    it('attaches the screenshot to the correct clipping via morph relationship', function () {
+        $clipping = WebClipping::factory()->create();
+        $tempPath = tempnam(sys_get_temp_dir(), 'klog_test_');
+        file_put_contents($tempPath, 'fake-png');
+
+        $this->service->storeScreenshotForClipping($clipping, $tempPath);
+
+        $clipping->refresh();
+        expect($clipping->screenshot)->not->toBeNull()
+            ->and($clipping->screenshot->mediable_type)->toBe($clipping->getMorphClass())
+            ->and($clipping->screenshot->mediable_id)->toBe($clipping->id);
+
+        @unlink($tempPath);
     });
 });

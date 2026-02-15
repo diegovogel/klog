@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Enums\MediaType;
 use App\Enums\MimeType;
 use App\Models\Media;
 use App\Models\Memory;
+use App\Models\WebClipping;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -54,6 +56,33 @@ class MediaStorageService
         }
 
         return $detected;
+    }
+
+    /**
+     * Store a screenshot file and attach it as Media to the given WebClipping.
+     */
+    public function storeScreenshotForClipping(WebClipping $clipping, string $tempFilePath): Media
+    {
+        $uuid = Str::uuid()->toString();
+        $filename = $uuid.'.png';
+
+        $now = now();
+        $directory = sprintf('uploads/%s/%s', $now->format('Y'), $now->format('m'));
+        $path = $directory.'/'.$filename;
+
+        Storage::disk(self::DISK)->put($path, file_get_contents($tempFilePath));
+
+        return $clipping->screenshot()->create([
+            'filename' => $uuid,
+            'original_filename' => 'screenshot.png',
+            'mime_type' => 'image/png',
+            'size' => filesize($tempFilePath),
+            'disk' => self::DISK,
+            'path' => $path,
+            'type' => MediaType::IMAGE->value,
+            'metadata' => null,
+            'order' => 0,
+        ]);
     }
 
     private function storeFile(Memory $memory, UploadedFile $file, int $order): Media

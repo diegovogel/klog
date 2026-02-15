@@ -29,6 +29,9 @@ php artisan migrate     # Run migrations
 php artisan db:seed     # Seed database
 php artisan user:create          # Create a new user (interactive)
 php artisan user:reset-password  # Reset a user's password (interactive)
+php artisan clippings:install-screenshots    # Install Browsershot + Puppeteer for screenshots
+php artisan clippings:uninstall-screenshots  # Remove screenshot packages
+php artisan clippings:screenshot             # Capture screenshots for clippings (--limit=10)
 ```
 
 ## Architecture & Design Principles
@@ -43,6 +46,9 @@ php artisan user:reset-password  # Reset a user's password (interactive)
   an auth-protected `MediaController`. No public symlink. URLs use `route('media.show', $filename)`
 - **Simple auth** — session-based login, no registration, no password reset flow, no 2FA. Users are created via
   `php artisan user:create`. All routes require authentication except `/login`
+- **Optional screenshot add-on** — web clipping screenshots use `spatie/browsershot` + `puppeteer`, installed via
+  `php artisan clippings:install-screenshots`. The schedule in `routes/console.php` activates automatically via
+  `class_exists()` check. Screenshots are stored as polymorphic `Media` on `WebClipping`. The app works without it.
 
 ## Data Model
 
@@ -85,12 +91,12 @@ php artisan user:reset-password  # Reset a user's password (interactive)
 ## Project Structure
 
 ```
-app/Console/Commands/ — Artisan commands (user:create, user:reset-password, media:migrate-to-private)
+app/Console/Commands/ — Artisan commands (user:create, user:reset-password, media:migrate-to-private, clippings:*)
 app/Enums/            — PHP enums (MemoryType, MediaType, MimeType)
 app/Http/Controllers/ — Controllers (Auth/LoginController, MediaController)
 app/Http/Requests/    — Form request validation (Auth/LoginRequest)
 app/Models/           — Eloquent models
-app/Services/         — Business logic
+app/Services/         — Business logic (MediaStorageService, ScreenshotService, HtmlSanitizer)
 database/migrations/  — Schema definitions
 database/factories/   — Test data factories
 database/seeders/     — Database seeders
@@ -230,6 +236,13 @@ protected function isAccessible(User $user, ?string $path = null): bool
 ## PHPDoc Blocks
 
 - Add useful array shape type definitions when appropriate.
+
+=== herd rules ===
+
+# Laravel Herd
+
+- The application is served by Laravel Herd and will be available at: `https?://[kebab-case-project-dir].test`. Use the `get-absolute-url` tool to generate valid URLs for the user.
+- You must not run any commands to make the site available via HTTP(S). It is always available through Laravel Herd.
 
 === tests rules ===
 

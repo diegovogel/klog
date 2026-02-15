@@ -15,8 +15,10 @@
         <div class="memory-card__clipping">
             <a href="{{$webClipping->url}}">{{$webClipping->url}}</a>
 
-            <img src="{{$webClipping->screenshot}}"
-                 alt="A screenshot of the URL">
+            @if($webClipping->screenshot)
+                <img src="{{$webClipping->screenshot->url}}"
+                     alt="A screenshot of the URL">
+            @endif
         </div>
     @endforeach
 
