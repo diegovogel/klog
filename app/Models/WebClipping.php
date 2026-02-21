@@ -15,6 +15,10 @@ class WebClipping extends Model
     protected $fillable = [
         'memory_id',
         'url',
+        'title',
+        'content',
+        'fetch_attempts',
+        'screenshot_attempts',
     ];
 
     public function memory(): BelongsTo

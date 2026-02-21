@@ -5,6 +5,50 @@
     gap: 20px;
 }
 
+.clipping-content-dialog {
+    max-width: 720px;
+    width: 90vw;
+    max-height: 80vh;
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: 8px;
+    padding: 0;
+}
+
+.clipping-content-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.clipping-content-dialog__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--pico-muted-border-color);
+
+    & h2 {
+        margin: 0;
+        font-size: 1.1rem;
+    }
+
+    & button {
+        flex-shrink: 0;
+        width: auto;
+    }
+}
+
+.clipping-content-dialog__body {
+    padding: 24px;
+    overflow-y: auto;
+    max-height: calc(80vh - 80px);
+}
+
+.memory-card__clipping-archived-btn {
+    width: auto;
+    padding: 4px 12px;
+    font-size: 0.85rem;
+}
+
 .memory-card__audio-clips,
 .memory-card__images,
 .memory-card__videos {

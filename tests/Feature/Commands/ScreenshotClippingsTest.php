@@ -136,4 +136,36 @@ describe('clippings:screenshot', function () {
 
         expect(Media::where('mediable_type', WebClipping::class)->count())->toBe(1);
     });
+
+    it('increments screenshot_attempts on each try', function () {
+        Storage::fake('local');
+
+        $mock = Mockery::mock(ScreenshotService::class);
+        $mock->shouldReceive('isAvailable')->once()->andReturn(true);
+        $mock->shouldReceive('capture')->once()->andThrow(new \RuntimeException('Failed'));
+        $this->app->instance(ScreenshotService::class, $mock);
+
+        $clipping = WebClipping::factory()->create();
+
+        $this->artisan('clippings:screenshot')
+            ->assertSuccessful();
+
+        expect($clipping->fresh()->screenshot_attempts)->toBe(1);
+    });
+
+    it('skips clippings that have reached max screenshot attempts', function () {
+        Storage::fake('local');
+
+        $mock = Mockery::mock(ScreenshotService::class);
+        $mock->shouldReceive('isAvailable')->once()->andReturn(true);
+        $this->app->instance(ScreenshotService::class, $mock);
+
+        WebClipping::factory()->create([
+            'screenshot_attempts' => 14,
+        ]);
+
+        $this->artisan('clippings:screenshot')
+            ->expectsOutput('All web clippings already have screenshots.')
+            ->assertSuccessful();
+    });
 });

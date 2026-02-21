@@ -29,6 +29,7 @@ php artisan migrate     # Run migrations
 php artisan db:seed     # Seed database
 php artisan user:create          # Create a new user (interactive)
 php artisan user:reset-password  # Reset a user's password (interactive)
+php artisan clippings:fetch-content           # Fetch & archive text content for clippings (--limit=10)
 php artisan clippings:install-screenshots    # Install Browsershot + Puppeteer for screenshots
 php artisan clippings:uninstall-screenshots  # Remove screenshot packages
 php artisan clippings:screenshot             # Capture screenshots for clippings (--limit=10)
@@ -46,15 +47,20 @@ php artisan clippings:screenshot             # Capture screenshots for clippings
   an auth-protected `MediaController`. No public symlink. URLs use `route('media.show', $filename)`
 - **Simple auth** — session-based login, no registration, no password reset flow, no 2FA. Users are created via
   `php artisan user:create`. All routes require authentication except `/login`
+- **Web clipping content extraction** — `clippings:fetch-content` fetches page HTML via Laravel's HTTP client,
+  strips non-content elements, and stores minimal structural HTML (headings, paragraphs, lists). Runs daily at 01:00.
+  No external dependencies. Failed URLs are retried up to 14 times before being permanently skipped.
 - **Optional screenshot add-on** — web clipping screenshots use `spatie/browsershot` + `puppeteer`, installed via
   `php artisan clippings:install-screenshots`. The schedule in `routes/console.php` activates automatically via
   `class_exists()` check. Screenshots are stored as polymorphic `Media` on `WebClipping`. The app works without it.
+  Failed URLs are retried up to 14 times.
 
 ## Data Model
 
 - **Memory** — core entity; has title (nullable), content (nullable), captured_at
 - **Media** — polymorphic attachment (image/video/audio) with type enum, JSON metadata, ordering
-- **WebClipping** — URL snapshot belonging to a Memory
+- **WebClipping** — URL snapshot belonging to a Memory; has title (nullable), content (nullable, minimal HTML),
+  fetch_attempts, screenshot_attempts (both track retry counts, max 14)
 - **Tag** — unique name + auto-generated slug, many-to-many with Memory via `memory_tag` pivot
 - **User** — standard Laravel auth
 
@@ -96,7 +102,7 @@ app/Enums/            — PHP enums (MemoryType, MediaType, MimeType)
 app/Http/Controllers/ — Controllers (Auth/LoginController, MediaController)
 app/Http/Requests/    — Form request validation (Auth/LoginRequest)
 app/Models/           — Eloquent models
-app/Services/         — Business logic (MediaStorageService, ScreenshotService, HtmlSanitizer)
+app/Services/         — Business logic (MediaStorageService, ScreenshotService, WebClippingContentService, HtmlSanitizer)
 database/migrations/  — Schema definitions
 database/factories/   — Test data factories
 database/seeders/     — Database seeders

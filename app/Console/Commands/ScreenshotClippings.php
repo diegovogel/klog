@@ -14,6 +14,8 @@ class ScreenshotClippings extends Command
 
     protected $description = 'Capture screenshots for web clippings that don\'t have one yet';
 
+    private const MAX_ATTEMPTS = 14;
+
     public function handle(ScreenshotService $screenshotService, MediaStorageService $mediaStorageService): int
     {
         if (! $screenshotService->isAvailable()) {
@@ -22,7 +24,8 @@ class ScreenshotClippings extends Command
             return self::FAILURE;
         }
 
-        $query = WebClipping::whereDoesntHave('screenshot');
+        $query = WebClipping::whereDoesntHave('screenshot')
+            ->where('screenshot_attempts', '<', self::MAX_ATTEMPTS);
 
         $limit = (int) $this->option('limit');
         if ($limit > 0) {
@@ -44,6 +47,7 @@ class ScreenshotClippings extends Command
         $failed = 0;
 
         foreach ($clippings as $clipping) {
+            $clipping->increment('screenshot_attempts');
             $tempPath = null;
 
             try {
@@ -71,7 +75,9 @@ class ScreenshotClippings extends Command
 
         $this->info("Captured {$captured}/{$total} screenshots. {$failed} failed.");
 
-        $remaining = WebClipping::whereDoesntHave('screenshot')->count();
+        $remaining = WebClipping::whereDoesntHave('screenshot')
+            ->where('screenshot_attempts', '<', self::MAX_ATTEMPTS)
+            ->count();
         if ($remaining > 0) {
             $this->info("{$remaining} clipping(s) still need screenshots.");
         }

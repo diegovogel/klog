@@ -21,4 +21,12 @@ class WebClippingFactory extends Factory
             'memory_id' => Memory::factory(),
         ];
     }
+
+    public function withContent(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'title' => $this->faker->sentence(),
+            'content' => '<p>'.$this->faker->paragraph().'</p>',
+        ]);
+    }
 }
