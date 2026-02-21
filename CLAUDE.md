@@ -32,7 +32,7 @@ php artisan user:reset-password  # Reset a user's password (interactive)
 php artisan clippings:fetch-content           # Fetch & archive text content for clippings (--limit=10)
 php artisan clippings:install-screenshots    # Install Browsershot + Puppeteer for screenshots
 php artisan clippings:uninstall-screenshots  # Remove screenshot packages
-php artisan clippings:screenshot             # Capture screenshots for clippings (--limit=10)
+php artisan clippings:screenshot             # Capture screenshots for clippings (--limit=10, --force)
 ```
 
 ## Architecture & Design Principles
@@ -52,8 +52,10 @@ php artisan clippings:screenshot             # Capture screenshots for clippings
   No external dependencies. Failed URLs are retried up to 14 times before being permanently skipped.
 - **Optional screenshot add-on** — web clipping screenshots use `spatie/browsershot` + `puppeteer`, installed via
   `php artisan clippings:install-screenshots`. The schedule in `routes/console.php` activates automatically via
-  `class_exists()` check. Screenshots are stored as polymorphic `Media` on `WebClipping`. The app works without it.
-  Failed URLs are retried up to 14 times.
+  `class_exists()` check. Screenshots are full-page PNGs stored as polymorphic `Media` on `WebClipping`. The app
+  works without it. Failed URLs are retried up to 14 times. `--force` recaptures all clippings, replacing existing
+  screenshots. Before capture, `ScreenshotService` injects CSS and JS to dismiss cookie banners, consent dialogs,
+  and other overlays (three-phase: selector-based click → text-based button click → removal of large fixed overlays).
 
 ## Data Model
 

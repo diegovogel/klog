@@ -7,10 +7,13 @@ use App\Services\MediaStorageService;
 use App\Services\ScreenshotService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ScreenshotClippings extends Command
 {
-    protected $signature = 'clippings:screenshot {--limit=10 : Maximum number of clippings to process (0 for unlimited)}';
+    protected $signature = 'clippings:screenshot
+        {--limit=10 : Maximum number of clippings to process (0 for unlimited)}
+        {--force : Recapture screenshots for all clippings, replacing existing ones}';
 
     protected $description = 'Capture screenshots for web clippings that don\'t have one yet';
 
@@ -24,8 +27,14 @@ class ScreenshotClippings extends Command
             return self::FAILURE;
         }
 
-        $query = WebClipping::whereDoesntHave('screenshot')
-            ->where('screenshot_attempts', '<', self::MAX_ATTEMPTS);
+        $force = $this->option('force');
+
+        if ($force) {
+            $query = WebClipping::query();
+        } else {
+            $query = WebClipping::whereDoesntHave('screenshot')
+                ->where('screenshot_attempts', '<', self::MAX_ATTEMPTS);
+        }
 
         $limit = (int) $this->option('limit');
         if ($limit > 0) {
@@ -51,6 +60,11 @@ class ScreenshotClippings extends Command
             $tempPath = null;
 
             try {
+                if ($force && $clipping->screenshot) {
+                    Storage::disk('local')->delete($clipping->screenshot->path);
+                    $clipping->screenshot->delete();
+                }
+
                 $tempPath = $screenshotService->capture($clipping->url);
                 $mediaStorageService->storeScreenshotForClipping($clipping, $tempPath);
                 @unlink($tempPath);

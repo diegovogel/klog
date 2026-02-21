@@ -168,4 +168,60 @@ describe('clippings:screenshot', function () {
             ->expectsOutput('All web clippings already have screenshots.')
             ->assertSuccessful();
     });
+
+    it('recaptures all clippings when --force is used', function () {
+        Storage::fake('local');
+
+        $mock = Mockery::mock(ScreenshotService::class);
+        $mock->shouldReceive('isAvailable')->once()->andReturn(true);
+        $mock->shouldReceive('capture')->twice()->andReturnUsing(function () {
+            $path = tempnam(sys_get_temp_dir(), 'klog_test_');
+            file_put_contents($path, str_repeat('x', 512));
+
+            return $path;
+        });
+        $this->app->instance(ScreenshotService::class, $mock);
+
+        // One with screenshot, one without
+        $withScreenshot = WebClipping::factory()->create();
+        $oldMedia = Media::factory()->image()->create([
+            'mediable_type' => WebClipping::class,
+            'mediable_id' => $withScreenshot->id,
+        ]);
+        Storage::disk('local')->put($oldMedia->path, 'old-screenshot');
+        WebClipping::factory()->create();
+
+        $this->artisan('clippings:screenshot --force --limit=0')
+            ->expectsOutput('Found 2 web clipping(s) to screenshot.')
+            ->expectsOutputToContain('Captured 2/2 screenshots. 0 failed.')
+            ->assertSuccessful();
+
+        // Old media should be deleted, new ones created
+        expect(Media::find($oldMedia->id))->toBeNull();
+        expect(Media::where('mediable_type', WebClipping::class)->count())->toBe(2);
+        expect(Storage::disk('local')->exists($oldMedia->path))->toBeFalse();
+    });
+
+    it('includes clippings at max attempts when --force is used', function () {
+        Storage::fake('local');
+
+        $mock = Mockery::mock(ScreenshotService::class);
+        $mock->shouldReceive('isAvailable')->once()->andReturn(true);
+        $mock->shouldReceive('capture')->once()->andReturnUsing(function () {
+            $path = tempnam(sys_get_temp_dir(), 'klog_test_');
+            file_put_contents($path, str_repeat('x', 512));
+
+            return $path;
+        });
+        $this->app->instance(ScreenshotService::class, $mock);
+
+        WebClipping::factory()->create([
+            'screenshot_attempts' => 14,
+        ]);
+
+        $this->artisan('clippings:screenshot --force')
+            ->expectsOutput('Found 1 web clipping(s) to screenshot.')
+            ->expectsOutputToContain('Captured 1/1 screenshots. 0 failed.')
+            ->assertSuccessful();
+    });
 });
