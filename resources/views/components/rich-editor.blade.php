@@ -4,9 +4,9 @@
     <label for="{{ $name }}">{{ $label }}</label>
     <div data-rich-editor class="rich-editor">
         <div data-editor-toolbar class="rich-editor__toolbar" role="toolbar" aria-label="Formatting">
-            <button type="button" data-command="bold" title="Bold (Ctrl+B)"><strong>B</strong></button>
-            <button type="button" data-command="italic" title="Italic (Ctrl+I)"><em>I</em></button>
-            <button type="button" data-command="link" title="Link (Ctrl+K)">🔗</button>
+            <button type="button" data-command="bold" aria-pressed="false" aria-label="Bold" title="Bold (Ctrl+B)"><strong>B</strong></button>
+            <button type="button" data-command="italic" aria-pressed="false" aria-label="Italic" title="Italic (Ctrl+I)"><em>I</em></button>
+            <button type="button" data-command="link" aria-pressed="false" aria-label="Link" title="Link (Ctrl+K)">🔗</button>
         </div>
         <div
             data-editor-content

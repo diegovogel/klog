@@ -188,6 +188,28 @@ describe('create memory', function () {
             ->assertSee('data-rich-editor', false);
     });
 
+    it('renders accessible rich editor attributes', function () {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->get(route('memories.create'))
+            ->assertSuccessful();
+
+        // Contenteditable has proper ARIA attributes
+        $response->assertSee('role="textbox"', false);
+        $response->assertSee('aria-multiline="true"', false);
+        $response->assertSee('aria-label="Content"', false);
+
+        // Toolbar has proper role
+        $response->assertSee('role="toolbar"', false);
+
+        // Toolbar buttons have aria-pressed and aria-label
+        $response->assertSee('aria-pressed="false"', false);
+        $response->assertSee('aria-label="Bold"', false);
+        $response->assertSee('aria-label="Italic"', false);
+        $response->assertSee('aria-label="Link"', false);
+    });
+
     it('shows the media upload on the create form', function () {
         $user = User::factory()->create();
 

@@ -62,13 +62,18 @@ document.querySelectorAll('[data-rich-editor]').forEach(editor => {
     function updateToolbarState () {
         toolbar.querySelectorAll('[data-command]').forEach(button => {
             const command = button.dataset.command
+            let active
+
             if (command === 'link') {
                 const selection = window.getSelection()
                 const anchor = selection.anchorNode?.parentElement?.closest('a')
-                button.classList.toggle('is-active', !!anchor)
+                active = !!anchor
             } else {
-                button.classList.toggle('is-active', document.queryCommandState(command))
+                active = document.queryCommandState(command)
             }
+
+            button.classList.toggle('is-active', active)
+            button.setAttribute('aria-pressed', String(active))
         })
     }
 
