@@ -1,9 +1,11 @@
 # Klog
 
-An app for collecting memories of our kids. Like a private Tumblr.
+> 🚧 PLEASE NOTE: this is a work in progress. 🚧
+
+An app for collecting memories of my kids. Like a private Tumblr.
 
 **Why not just use Tumblr or some other existing platform?** Longevity. I want to be able to view these memories 20, 30,
-or 40 years from now, and I want the boys and their families to be able to do the same. I realize it's very ambitious to
+or 40 years from now, and I want my kids and their families to be able to do the same. I realize it's very ambitious to
 build anything on the web that's supposed to last that long, but to improve my chances, I can't rely on a platform that
 might shut down. I'm sure I could export the data, but then it would be a pain to import it or use it.
 
@@ -11,19 +13,20 @@ might shut down. I'm sure I could export the data, but then it would be a pain t
 
 ## Goals
 
-- Very easy and quick to upload content. We should be able to upload a simple memory in one minute or less.
+- Very easy and quick to upload content. I should be able to upload a simple memory in one minute or less.
 - Multiple memory formats:
     - Text
     - Photo/video
     - Audio
-    - URL — automatically take a snapshot of the URL so we avoid broken links down the road.
-- Can be browsed by visiting their domains and logging in.
-- Built to last. The idea is that we/they will view these 20+ years from now.
+    - URL (aka web clipping) — automatically takes a snapshot of the URL in case of broken links down the road.
+- Can be browsed by visiting a domain and logging in.
+- Built to last. The idea is that we will view these 20+ years from now.
 - Excellent search. If we can't find a memory, what's the point?
 
 ## Architecture Decisions
 
-- **Laravel back end.** I know Laravel. It's healthy. It's very flexible. The data is clean and portable (as opposed to
+- **Laravel back end.** I already know Laravel. It's healthy. It's flexible. The data is clean and portable (as opposed
+  to
   WordPress, where the DB tables are a mess).
 - **Blade front end enhanced with Alpine or vanilla JS.** No dependence on a build step means better maintainability and
   longevity because there are fewer things to become obsolete. Server-rendered HTML is more likely to last and just
@@ -77,10 +80,10 @@ php artisan clippings:install-screenshots
 ```
 
 This installs the required dependencies (Browsershot and Puppeteer) and runs a pipeline test to make sure everything
-works. The scheduler is already set up to take screenshots every day at 2 am if Browsershot is installed.
+works. The scheduler is already set up to capture any missing screenshots every day at 2 am if Browsershot is installed.
 
 To reduce complexity, a queue is not used for processing screenshots. Instead, the system processes a max of 10
-clippings at a time. If there's a backlog of clippings needing screenshots when the system is first enabled, it'll
+clippings at a time. If there's a backlog of screenshots to capture, it'll
 process 10 per day until it's caught up. Since screenshots are simply for long-term archiving, it doesn't matter if it
 takes days or weeks to process them.
 
@@ -106,8 +109,11 @@ This removes the dependencies, which automatically deactivates the scheduled tas
   and almost timeless compared to a live site. Anyone could unzip them and view the entire site in a browser. They could
   also be used as backups.
 - [ ] **PDF export command.** Something like `php artisan memories:export-pdf {start_date}`. This would generate a PDF
-  of all memories in a layout that would work well for printing. The start date argument would be optional and would
+  of all memories in a layout that would work well for printing. This could be used for creating a scrapbook or just a
+  physical backup. The start date argument would be optional and would
   allow us to print new memories from time to time.
-- [ ] **Audio and video transcription.** When an audio or video memory is uploaded, it's automatically transcribed and
+- [ ] **Audio and video transcription.** When an audio or video memory is uploaded, it would be automatically
+  transcribed and
   saved to the DB. The text could be used for search, displayed for accessibility, and used in the PDF export.
-- [ ] **Password reset flow and 2FA.**
+- [ ] **Automated image alt text.** When an image is uploaded, AI scans it and generates alt text.
+- [ ] **2FA and self-service password reset.**
