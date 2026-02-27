@@ -43,6 +43,59 @@
     max-height: calc(80vh - 80px);
 }
 
+.memory-card__clipping-screenshot-btn {
+    all: unset;
+    cursor: pointer;
+    display: block;
+    max-width: 200px;
+    max-height: 150px;
+    overflow: hidden;
+    margin-block-start: 8px;
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: 4px;
+}
+
+.memory-card__clipping-thumbnail {
+    display: block;
+    width: 100%;
+}
+
+.clipping-screenshot-dialog {
+    position: relative;
+    width: 90vw;
+    max-width: 1500px;
+    max-height: 90vh;
+    border: none;
+    border-radius: 8px;
+    padding: 0;
+    background: var(--pico-background-color, #fff);
+    overflow: hidden;
+}
+
+.clipping-screenshot-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.clipping-screenshot-dialog__close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: auto;
+    padding: 4px 12px;
+    font-size: 0.85rem;
+    z-index: 1;
+}
+
+.clipping-screenshot-dialog__body {
+    overflow-y: auto;
+    max-height: 90vh;
+}
+
+.clipping-screenshot-dialog__body img {
+    display: block;
+    width: 100%;
+}
+
 .memory-card__clipping-archived-btn {
     width: auto;
     padding: 4px 12px;

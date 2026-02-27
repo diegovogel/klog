@@ -16,8 +16,18 @@
             <a href="{{$webClipping->url}}">{{ $webClipping->title ?? $webClipping->url }}</a>
 
             @if($webClipping->screenshot)
-                <img src="{{$webClipping->screenshot->url}}"
-                     alt="A screenshot of the URL">
+                <button type="button" class="memory-card__clipping-screenshot-btn" onclick="const d=this.nextElementSibling;d.showModal();document.body.classList.add('scroll-disabled')">
+                    <img src="{{$webClipping->screenshot->url}}"
+                         alt="A screenshot of the URL"
+                         class="memory-card__clipping-thumbnail">
+                </button>
+                <dialog class="clipping-screenshot-dialog" onclick="if(event.target===this)this.close()" onclose="document.body.classList.remove('scroll-disabled')">
+                    <button type="button" class="clipping-screenshot-dialog__close" onclick="this.closest('dialog').close()">Close</button>
+                    <div class="clipping-screenshot-dialog__body">
+                        <img src="{{$webClipping->screenshot->url}}"
+                             alt="A screenshot of the URL">
+                    </div>
+                </dialog>
             @endif
 
             @if($webClipping->content)

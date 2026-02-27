@@ -56,6 +56,11 @@ php artisan clippings:screenshot             # Capture screenshots for clippings
   works without it. Failed URLs are retried up to 14 times. `--force` recaptures all clippings, replacing existing
   screenshots. Before capture, `ScreenshotService` injects CSS and JS to dismiss cookie banners, consent dialogs,
   and other overlays (three-phase: selector-based click → text-based button click → removal of large fixed overlays).
+- **Error email notifications** — a custom Monolog log channel (`email`) in the default logging stack sends
+  error-level (and above) log entries to a maintainer via email. Recipient resolution: `MAINTAINER_EMAIL` env var
+  → stored `app_settings` value → iterate users by ID until one succeeds (saved for future errors). Includes
+  rate limiting (1 email per unique error per 15 min), infinite-loop prevention, and resilience to pre-migration
+  state. Configured in `config/logging.php` and `config/klog.php`.
 
 ## Data Model
 
@@ -64,6 +69,7 @@ php artisan clippings:screenshot             # Capture screenshots for clippings
 - **WebClipping** — URL snapshot belonging to a Memory; has title (nullable), content (nullable, minimal HTML),
   fetch_attempts, screenshot_attempts (both track retry counts, max 14)
 - **Tag** — unique name + auto-generated slug, many-to-many with Memory via `memory_tag` pivot
+- **AppSetting** — key-value store for application settings (e.g., discovered `maintainer_email`)
 - **User** — standard Laravel auth
 
 ### Key Relationships
@@ -104,7 +110,9 @@ app/Enums/            — PHP enums (MemoryType, MediaType, MimeType)
 app/Http/Controllers/ — Controllers (Auth/LoginController, MediaController)
 app/Http/Requests/    — Form request validation (Auth/LoginRequest)
 app/Models/           — Eloquent models
-app/Services/         — Business logic (MediaStorageService, ScreenshotService, WebClippingContentService, HtmlSanitizer)
+app/Logging/          — Custom Monolog handlers (EmailLogHandler)
+app/Mail/             — Mailable classes (ErrorOccurred)
+app/Services/         — Business logic (MediaStorageService, MaintainerResolverService, ScreenshotService, WebClippingContentService, HtmlSanitizer)
 database/migrations/  — Schema definitions
 database/factories/   — Test data factories
 database/seeders/     — Database seeders

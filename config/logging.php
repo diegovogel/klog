@@ -1,5 +1,6 @@
 <?php
 
+use App\Logging\EmailLogHandler;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -54,7 +55,7 @@ return [
 
         'stack' => [
             'driver' => 'stack',
-            'channels' => explode(',', (string) env('LOG_STACK', 'single')),
+            'channels' => explode(',', (string) env('LOG_STACK', 'single,email')),
             'ignore_exceptions' => false,
         ],
 
@@ -63,6 +64,12 @@ return [
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'replace_placeholders' => true,
+        ],
+
+        'email' => [
+            'driver' => 'monolog',
+            'handler' => EmailLogHandler::class,
+            'level' => 'error',
         ],
 
         'daily' => [
