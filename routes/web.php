@@ -20,7 +20,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/', function () {
         return view('memory-feed', [
-            'memories' => Memory::latest('memory_date')->paginate(20),
+            'memories' => Memory::latest('memory_date')->paginate(10),
         ]);
     });
 
