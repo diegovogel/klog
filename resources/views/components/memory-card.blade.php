@@ -47,7 +47,7 @@
         <div class="memory-card__audio-clips">
             @foreach($audioClips as $clip)
                 <audio controls>
-                    <source src="{{$clip->url}}">
+                    <source src="{{$clip->url}}" type="{{$clip->mime_type}}">
                     Your browser does not support the audio element.
                 </audio>
             @endforeach

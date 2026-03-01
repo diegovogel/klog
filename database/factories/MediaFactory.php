@@ -44,39 +44,36 @@ class MediaFactory extends Factory
 
     public function image(): static
     {
-        $type = MediaType::IMAGE->value;
-        $fileName = $this->pickFilename($type);
+        $fileName = $this->pickFilename(MediaType::IMAGE->value);
 
         return $this->state(fn (array $attributes) => [
-            'type' => $type,
+            'type' => MediaType::IMAGE->value,
             'mime_type' => MimeType::JPEG->value,
-            'filename' => $fileName,
+            'original_filename' => $fileName,
             'path' => $fileName,
         ]);
     }
 
     public function video(): static
     {
-        $type = MediaType::VIDEO->value;
-        $fileName = $this->pickFilename($type);
+        $fileName = $this->pickFilename(MediaType::VIDEO->value);
 
         return $this->state(fn (array $attributes) => [
-            'type' => $type,
+            'type' => MediaType::VIDEO->value,
             'mime_type' => MimeType::MOV->value,
-            'filename' => $fileName,
+            'original_filename' => $fileName,
             'path' => $fileName,
         ]);
     }
 
     public function audio(): static
     {
-        $type = MediaType::AUDIO->value;
-        $fileName = $this->pickFilename($type);
+        $fileName = $this->pickFilename(MediaType::AUDIO->value);
 
         return $this->state(fn (array $attributes) => [
-            'type' => $type,
-            'mime_type' => MimeType::M4A->value,
-            'filename' => $fileName,
+            'type' => MediaType::AUDIO->value,
+            'mime_type' => MimeType::MP4_AUDIO->value,
+            'original_filename' => $fileName,
             'path' => $fileName,
         ]);
     }

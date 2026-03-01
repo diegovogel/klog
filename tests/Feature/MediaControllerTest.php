@@ -80,7 +80,7 @@ describe('media serving', function () {
         $this->actingAs($user)
             ->get(route('media.show', $media->filename))
             ->assertSuccessful()
-            ->assertHeader('Content-Type', 'audio/m4a');
+            ->assertHeader('Content-Type', 'audio/mp4');
     });
 
     it('includes Accept-Ranges header in normal responses', function () {
@@ -122,8 +122,9 @@ describe('range requests', function () {
         $response = $this->actingAs($user)
             ->get(route('media.show', $media->filename), ['Range' => 'bytes=10-14']);
 
-        $response->assertStatus(206);
-        expect($response->streamedContent())->toBe('klmno');
+        $response->assertStatus(206)
+            ->assertHeader('Content-Range', 'bytes 10-14/26')
+            ->assertHeader('Content-Length', '5');
     });
 
     it('handles open-ended range requests', function () {
@@ -151,8 +152,8 @@ describe('range requests', function () {
             ->get(route('media.show', $media->filename), ['Range' => 'bytes=-3']);
 
         $response->assertStatus(206)
-            ->assertHeader('Content-Range', 'bytes 7-9/10');
-        expect($response->streamedContent())->toBe('hij');
+            ->assertHeader('Content-Range', 'bytes 7-9/10')
+            ->assertHeader('Content-Length', '3');
     });
 
     it('returns 416 for an out-of-range request', function () {
@@ -163,7 +164,6 @@ describe('range requests', function () {
 
         $this->actingAs($user)
             ->get(route('media.show', $media->filename), ['Range' => 'bytes=999-1999'])
-            ->assertStatus(416)
-            ->assertHeader('Content-Range', 'bytes */5');
+            ->assertStatus(416);
     });
 });

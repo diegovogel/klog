@@ -23,7 +23,6 @@ enum MimeType: string
     // Audio
     case MPEG = 'audio/mpeg';
     case WAV = 'audio/wav';
-    case M4A = 'audio/m4a';
     case MP4_AUDIO = 'audio/mp4';
     case WEBM_AUDIO = 'audio/webm';
 
@@ -40,7 +39,7 @@ enum MimeType: string
         return match ($mimeType) {
             MimeType::JPEG->value, MimeType::PNG->value, MimeType::GIF->value, MimeType::WEBP->value, MimeType::HEIC->value, MimeType::HEIF->value, MimeType::AVIF->value => MediaType::IMAGE->value,
             MimeType::MOV->value, MimeType::MP4->value, MimeType::WEBM_VIDEO->value => MediaType::VIDEO->value,
-            MimeType::MPEG->value, MimeType::WAV->value, MimeType::M4A->value, MimeType::MP4_AUDIO->value, MimeType::WEBM_AUDIO->value => MediaType::AUDIO->value,
+            MimeType::MPEG->value, MimeType::WAV->value, MimeType::MP4_AUDIO->value, MimeType::WEBM_AUDIO->value => MediaType::AUDIO->value,
             default => throw new Exception('Unexpected mime type: '.$mimeType),
         };
     }

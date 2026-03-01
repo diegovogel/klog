@@ -29,7 +29,6 @@ describe('MimeType enum', function () {
     })->with([
         'mpeg' => 'audio/mpeg',
         'wav' => 'audio/wav',
-        'm4a' => 'audio/m4a',
         'mp4' => 'audio/mp4',
         'webm' => 'audio/webm',
     ]);
