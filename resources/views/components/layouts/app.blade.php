@@ -12,6 +12,9 @@
 <body>
 <header class="site-header">
     <a href="/"><h1 class="site-header__title">{{config('app.name', 'Klog')}}</h1></a>
+    <nav class="site-header__nav">
+        <a href="{{ route('two-factor.settings') }}">Settings</a>
+    </nav>
 </header>
 
 <main class="container">

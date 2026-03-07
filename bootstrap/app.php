@@ -12,6 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectGuestsTo('/login');
+        $middleware->alias([
+            'two-factor' => \App\Http\Middleware\EnsureTwoFactorChallenge::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

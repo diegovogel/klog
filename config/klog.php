@@ -15,4 +15,18 @@ return [
 
     'maintainer_email' => env('MAINTAINER_EMAIL'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Two-Factor Authentication
+    |--------------------------------------------------------------------------
+    */
+
+    'two_factor' => [
+        'email_code_ttl' => 10,
+        'remember_days' => (int) env('TWO_FACTOR_REMEMBER_DAYS', 30),
+        'recovery_code_count' => 8,
+        'max_attempts' => 5,
+        'decay_minutes' => 10,
+    ],
+
 ];

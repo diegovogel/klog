@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\TwoFactorMethod;
+use App\Services\TwoFactorService;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -39,6 +41,17 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    public function withTwoFactor(TwoFactorMethod $method = TwoFactorMethod::EMAIL): static
+    {
+        $codes = TwoFactorService::generateRecoveryCodes();
+
+        return $this->state(fn (array $attributes) => [
+            'two_factor_method' => $method,
+            'two_factor_confirmed_at' => now(),
+            'two_factor_recovery_codes' => TwoFactorService::hashRecoveryCodes($codes),
         ]);
     }
 }

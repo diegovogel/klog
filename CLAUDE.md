@@ -33,6 +33,8 @@ php artisan clippings:fetch-content           # Fetch & archive text content for
 php artisan clippings:install-screenshots    # Install Browsershot + Puppeteer for screenshots
 php artisan clippings:uninstall-screenshots  # Remove screenshot packages
 php artisan clippings:screenshot             # Capture screenshots for clippings (--limit=10, --force)
+php artisan 2fa:install-authenticator        # Install TOTP authenticator packages
+php artisan 2fa:uninstall-authenticator      # Remove authenticator packages, migrate users to email 2FA
 ```
 
 ## Architecture & Design Principles
@@ -45,8 +47,12 @@ php artisan clippings:screenshot             # Capture screenshots for clippings
 - **Polymorphic media** — `Media` attaches to `Memory` and `WebClipping` via `mediable_type`/`mediable_id`
 - **Private media storage** — media files are stored on the `local` disk (`storage/app/private/`) and served through
   an auth-protected `MediaController`. No public symlink. URLs use `route('media.show', $filename)`
-- **Simple auth** — session-based login, no registration, no password reset flow, no 2FA. Users are created via
-  `php artisan user:create`. All routes require authentication except `/login`
+- **Session-based auth with optional 2FA** — no registration, no password reset flow. Users are created via
+  `php artisan user:create`. All routes require authentication except `/login`. Two-factor authentication supports
+  two methods: email (always available) and authenticator app (optional add-on). The `EnsureTwoFactorChallenge`
+  middleware intercepts authenticated users who haven't completed 2FA, redirecting to a challenge page. Devices
+  can be remembered via an encrypted cookie (configurable via `TWO_FACTOR_REMEMBER_DAYS` env var, default 30).
+  Recovery codes (8 per user, bcrypt-hashed) work with both methods.
 - **Web clipping content extraction** — `clippings:fetch-content` fetches page HTML via Laravel's HTTP client,
   strips non-content elements, and stores minimal structural HTML (headings, paragraphs, lists). Runs daily at 01:00.
   No external dependencies. Failed URLs are retried up to 14 times before being permanently skipped.
@@ -56,6 +62,11 @@ php artisan clippings:screenshot             # Capture screenshots for clippings
   works without it. Failed URLs are retried up to 14 times. `--force` recaptures all clippings, replacing existing
   screenshots. Before capture, `ScreenshotService` injects CSS and JS to dismiss cookie banners, consent dialogs,
   and other overlays (three-phase: selector-based click → text-based button click → removal of large fixed overlays).
+- **Optional authenticator app add-on** — TOTP-based 2FA uses `pragmarx/google2fa` + `chillerlan/php-qrcode`,
+  installed via `php artisan 2fa:install-authenticator`. Follows the same pattern as the screenshot feature:
+  `AuthenticatorService::isAvailable()` uses `class_exists()` guard. The settings UI conditionally shows the
+  authenticator option. Uninstalling via `php artisan 2fa:uninstall-authenticator` gracefully migrates confirmed
+  authenticator users to email method (no lockouts), clears unconfirmed setups, then removes packages.
 - **Error email notifications** — a custom Monolog log channel (`email`) in the default logging stack sends
   error-level (and above) log entries to a maintainer via email. Recipient resolution: `MAINTAINER_EMAIL` env var
   → stored `app_settings` value → iterate users by ID until one succeeds (saved for future errors). Includes
@@ -70,7 +81,8 @@ php artisan clippings:screenshot             # Capture screenshots for clippings
   fetch_attempts, screenshot_attempts (both track retry counts, max 14)
 - **Tag** — unique name + auto-generated slug, many-to-many with Memory via `memory_tag` pivot
 - **AppSetting** — key-value store for application settings (e.g., discovered `maintainer_email`)
-- **User** — standard Laravel auth
+- **User** — standard Laravel auth; optional 2FA columns: `two_factor_method` (enum), `two_factor_secret`
+  (encrypted), `two_factor_recovery_codes` (encrypted array), `two_factor_confirmed_at`, `two_factor_remember_token`
 
 ### Key Relationships
 
@@ -83,6 +95,7 @@ php artisan clippings:screenshot             # Capture screenshots for clippings
 - `MemoryType` — photo, video, audio, webclip, text
 - `MediaType` — image, video, audio
 - `MimeType` — JPEG, PNG, GIF, WEBP, HEIC, HEIF, AVIF, MOV, MP4, WEBM_VIDEO, MPEG, WAV, M4A, WEBM_AUDIO
+- `TwoFactorMethod` — EMAIL, AUTHENTICATOR
 
 ## Coding Conventions
 
@@ -105,14 +118,15 @@ php artisan clippings:screenshot             # Capture screenshots for clippings
 ## Project Structure
 
 ```
-app/Console/Commands/ — Artisan commands (user:create, user:reset-password, media:migrate-to-private, clippings:*)
-app/Enums/            — PHP enums (MemoryType, MediaType, MimeType)
-app/Http/Controllers/ — Controllers (Auth/LoginController, MediaController)
-app/Http/Requests/    — Form request validation (Auth/LoginRequest)
+app/Console/Commands/ — Artisan commands (user:create, user:reset-password, media:migrate-to-private, clippings:*, 2fa:*)
+app/Enums/            — PHP enums (MemoryType, MediaType, MimeType, TwoFactorMethod)
+app/Http/Controllers/ — Controllers (Auth/LoginController, Auth/TwoFactorChallengeController, TwoFactorSettingsController, MediaController)
+app/Http/Middleware/  — Custom middleware (EnsureTwoFactorChallenge)
+app/Http/Requests/    — Form request validation (Auth/LoginRequest, Auth/TwoFactorChallengeRequest)
 app/Models/           — Eloquent models
 app/Logging/          — Custom Monolog handlers (EmailLogHandler)
-app/Mail/             — Mailable classes (ErrorOccurred)
-app/Services/         — Business logic (MediaStorageService, MaintainerResolverService, ScreenshotService, WebClippingContentService, HtmlSanitizer)
+app/Mail/             — Mailable classes (ErrorOccurred, TwoFactorCodeMail)
+app/Services/         — Business logic (MediaStorageService, MaintainerResolverService, ScreenshotService, TwoFactorService, AuthenticatorService, WebClippingContentService, HtmlSanitizer)
 database/migrations/  — Schema definitions
 database/factories/   — Test data factories
 database/seeders/     — Database seeders

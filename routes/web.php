@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\MediaController;
+use App\Http\Controllers\TwoFactorSettingsController;
 use App\Http\Requests\StoreMemoryRequest;
 use App\Models\Memory;
 use App\Services\HtmlSanitizer;
@@ -16,37 +18,59 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
-    Route::get('media/{filename}', [MediaController::class, 'show'])->name('media.show');
+    Route::get('two-factor/challenge', [TwoFactorChallengeController::class, 'show'])
+        ->name('two-factor.challenge');
+    Route::post('two-factor/challenge', [TwoFactorChallengeController::class, 'verify'])
+        ->name('two-factor.verify');
+    Route::post('two-factor/resend', [TwoFactorChallengeController::class, 'resend'])
+        ->name('two-factor.resend');
 
-    Route::get('/', function () {
-        return view('memory-feed', [
-            'memories' => Memory::latest('memory_date')->paginate(10),
-        ]);
+    Route::middleware('two-factor')->group(function () {
+        Route::get('media/{filename}', [MediaController::class, 'show'])->name('media.show');
+
+        Route::get('/', function () {
+            return view('memory-feed', [
+                'memories' => Memory::latest('memory_date')->paginate(10),
+            ]);
+        });
+
+        Route::get('memories/create', function () {
+            $latestMemoryDate = Memory::max('memory_date');
+
+            return view('memories.create', [
+                'latestMemoryDate' => $latestMemoryDate,
+            ]);
+        })->name('memories.create');
+
+        Route::post('memories', function (StoreMemoryRequest $request, HtmlSanitizer $sanitizer, MediaStorageService $mediaStorage) {
+            $memory = Memory::create([
+                'title' => $request->validated('title'),
+                'content' => $sanitizer->sanitize($request->validated('content')),
+                'memory_date' => $request->validated('memory_date'),
+            ]);
+
+            if ($request->hasFile('media')) {
+                $mediaStorage->storeForMemory($memory, $request->file('media'));
+            }
+
+            foreach ($request->validated('clippings', []) as $url) {
+                $memory->webClippings()->create(['url' => $url]);
+            }
+
+            return redirect('/')->with('success', 'Memory saved.');
+        })->name('memories.store');
+
+        Route::get('settings/two-factor', [TwoFactorSettingsController::class, 'show'])
+            ->name('two-factor.settings');
+        Route::post('settings/two-factor/enable', [TwoFactorSettingsController::class, 'enable'])
+            ->name('two-factor.enable');
+        Route::post('settings/two-factor/disable', [TwoFactorSettingsController::class, 'disable'])
+            ->name('two-factor.disable');
+        Route::post('settings/two-factor/recovery-codes', [TwoFactorSettingsController::class, 'regenerateRecoveryCodes'])
+            ->name('two-factor.recovery-codes');
+        Route::get('settings/two-factor/authenticator/setup', [TwoFactorSettingsController::class, 'showAuthenticatorSetup'])
+            ->name('two-factor.authenticator.setup');
+        Route::post('settings/two-factor/authenticator/confirm', [TwoFactorSettingsController::class, 'confirmAuthenticator'])
+            ->name('two-factor.authenticator.confirm');
     });
-
-    Route::get('memories/create', function () {
-        $latestMemoryDate = Memory::max('memory_date');
-
-        return view('memories.create', [
-            'latestMemoryDate' => $latestMemoryDate,
-        ]);
-    })->name('memories.create');
-
-    Route::post('memories', function (StoreMemoryRequest $request, HtmlSanitizer $sanitizer, MediaStorageService $mediaStorage) {
-        $memory = Memory::create([
-            'title' => $request->validated('title'),
-            'content' => $sanitizer->sanitize($request->validated('content')),
-            'memory_date' => $request->validated('memory_date'),
-        ]);
-
-        if ($request->hasFile('media')) {
-            $mediaStorage->storeForMemory($memory, $request->file('media'));
-        }
-
-        foreach ($request->validated('clippings', []) as $url) {
-            $memory->webClippings()->create(['url' => $url]);
-        }
-
-        return redirect('/')->with('success', 'Memory saved.');
-    })->name('memories.store');
 });
