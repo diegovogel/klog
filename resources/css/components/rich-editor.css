@@ -1,48 +1,52 @@
 .rich-editor {
-    border: 1px solid var(--pico-form-element-border-color);
-    border-radius: var(--pico-border-radius);
+    border: 1px solid var(--klog-border);
+    border-radius: var(--klog-radius);
     overflow: hidden;
+    transition: border-color 0.15s ease;
+
+    &:focus-within {
+        border-color: var(--klog-primary);
+        box-shadow: 0 0 0 3px rgba(180, 90, 53, 0.1);
+    }
 }
 
 .rich-editor__toolbar {
     display: flex;
     gap: 0;
-    border-bottom: 1px solid var(--pico-form-element-border-color);
-    background: var(--pico-form-element-background-color);
-    padding: 0.25rem;
+    border-bottom: 1px solid var(--klog-border-light);
+    background: var(--klog-bg-subtle);
+    padding: var(--klog-space-xs);
 
     & button {
         all: unset;
         cursor: pointer;
         padding: 0.25rem 0.5rem;
-        border-radius: var(--pico-border-radius);
+        border-radius: var(--klog-radius);
         line-height: 1;
         font-size: 0.875rem;
-        color: var(--pico-color);
+        color: var(--klog-text-secondary);
 
         &:hover {
-            background: var(--pico-secondary-hover-background);
+            background: var(--klog-border-light);
+            color: var(--klog-text);
         }
 
         &.is-active {
-            background: var(--pico-primary-background);
-            color: var(--pico-primary-inverse);
+            background: var(--klog-primary);
+            color: var(--klog-primary-text);
         }
     }
 }
 
 .rich-editor__content {
     min-height: 8rem;
-    padding: var(--pico-form-element-spacing-vertical) var(--pico-form-element-spacing-horizontal);
+    padding: 0.6rem 0.75rem;
     outline: none;
-    line-height: var(--pico-line-height);
-
-    &:focus {
-        border-color: var(--pico-form-element-active-border-color);
-    }
+    line-height: var(--klog-leading);
+    font-size: 0.9375rem;
 
     & a {
-        color: var(--pico-primary);
+        color: var(--klog-link);
         text-decoration: underline;
     }
 }

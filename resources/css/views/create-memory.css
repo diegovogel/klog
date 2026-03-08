@@ -1,0 +1,7 @@
+.memory-form__section {
+    margin-block-end: var(--klog-space-lg);
+}
+
+.memory-form__submit {
+    margin-block-start: var(--klog-space-xl);
+}

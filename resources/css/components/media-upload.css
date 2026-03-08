@@ -3,15 +3,24 @@
     align-items: center;
     justify-content: center;
     min-height: 5rem;
-    border: 2px dashed var(--pico-form-element-border-color);
-    border-radius: var(--pico-border-radius);
+    border: 2px dashed var(--klog-border);
+    border-radius: var(--klog-radius);
     cursor: pointer;
-    padding: 1rem;
+    padding: var(--klog-space-md);
     text-align: center;
+    color: var(--klog-text-muted);
+    font-size: 0.875rem;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+
+    &:hover {
+        border-color: var(--klog-primary);
+        background-color: rgba(180, 90, 53, 0.02);
+    }
 }
 
 .media-upload__dropzone.is-dragover {
-    border-color: var(--pico-primary);
+    border-color: var(--klog-primary);
+    background-color: rgba(180, 90, 53, 0.04);
 }
 
 .media-upload__preview {
@@ -34,9 +43,9 @@
     position: relative;
     width: 7rem;
     height: 7rem;
-    border-radius: var(--pico-border-radius);
+    border-radius: var(--klog-radius);
     overflow: hidden;
-    background: var(--pico-form-element-background-color);
+    background: var(--klog-bg-subtle);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -55,6 +64,7 @@
 
 .media-upload__info {
     font-size: 0.75rem;
+    color: var(--klog-text-muted);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -69,7 +79,7 @@
     width: 1.5rem;
     height: 1.5rem;
     border-radius: 50%;
-    background: var(--pico-del-color, #c62828);
+    background: var(--klog-danger);
     color: white;
     font-size: 1rem;
     line-height: 1;
@@ -77,4 +87,9 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
+}
+
+.media-upload__counter {
+    font-size: 0.8125rem;
+    color: var(--klog-text-muted);
 }

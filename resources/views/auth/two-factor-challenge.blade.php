@@ -1,75 +1,75 @@
 <x-layouts.public>
     <x-slot:title>Two-Factor Authentication - {{ config('app.name', 'Klog') }}</x-slot:title>
 
-    <div class="login-wrapper">
-        <h1 class="login-title">{{ config('app.name', 'Klog') }}</h1>
+    <div class="login-page">
+        <div class="login-card">
+            <div class="login-card__header">
+                <h1 class="login-card__logo">{{ config('app.name', 'Klog') }}</h1>
+                <p class="login-card__tagline" id="instructions">
+                    @if($method === \App\Enums\TwoFactorMethod::EMAIL)
+                        A verification code has been sent to your email.
+                    @else
+                        Enter the code from your authenticator app.
+                    @endif
+                </p>
+            </div>
 
-        <p id="instructions">
-            @if($method === \App\Enums\TwoFactorMethod::EMAIL)
-                A verification code has been sent to your email.
-            @else
-                Enter the code from your authenticator app.
+            @if(session('status'))
+                <div class="alert alert--success">{{ session('status') }}</div>
             @endif
-        </p>
 
-        @if(session('status'))
-            <p style="color: green;">{{ session('status') }}</p>
-        @endif
+            <form method="POST"
+                  action="{{ route('two-factor.verify') }}"
+                  id="challenge-form">
+                @csrf
 
-        <form method="POST"
-              action="{{ route('two-factor.verify') }}"
-              id="challenge-form">
-            @csrf
-
-            <div id="code-fields">
-                <div>
-                    <label for="code" id="code-label">Verification code</label>
+                <div class="form-group" id="code-fields">
+                    <label for="code" class="form-label" id="code-label">Verification code</label>
                     <input
                         id="code"
                         name="code"
                         type="text"
+                        class="form-input"
                         inputmode="numeric"
                         autocomplete="one-time-code"
                         required
                         autofocus
                     >
                     @error('code')
-                    <p>{{ $message }}</p>
+                    <p class="form-error">{{ $message }}</p>
                     @enderror
                 </div>
+
+                <input type="hidden" name="recovery" id="recovery-input" value="0">
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="remember" value="1">
+                        Remember this device for {{ config('klog.two_factor.remember_days', 30) }} days
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn--primary btn--block">Verify</button>
+            </form>
+
+            <div class="link-row">
+                @if($method === \App\Enums\TwoFactorMethod::EMAIL)
+                    <form method="POST" action="{{ route('two-factor.resend') }}" style="display: inline;">
+                        @csrf
+                        <button type="submit" class="btn btn--ghost btn--sm">Resend code</button>
+                    </form>
+                    &middot;
+                @endif
+                <a href="#" id="toggle-recovery" class="btn btn--ghost btn--sm">Use a recovery code</a>
             </div>
 
-            <input type="hidden" name="recovery" id="recovery-input" value="0">
-
-            <div>
-                <label>
-                    <input type="checkbox" name="remember" value="1">
-                    Remember this device for {{ config('klog.two_factor.remember_days', 30) }} days
-                </label>
-            </div>
-
-            <button type="submit">Verify</button>
-        </form>
-
-        <div style="margin-top: 1rem; font-size: 0.875rem;">
-            @if($method === \App\Enums\TwoFactorMethod::EMAIL)
-                <form method="POST" action="{{ route('two-factor.resend') }}" style="display: inline;">
+            <div class="link-row">
+                <form method="POST" action="{{ route('logout') }}" style="display: inline;">
                     @csrf
-                    <button type="submit" style="background: none; border: none; color: inherit; text-decoration: underline; cursor: pointer; padding: 0; font-size: inherit;">
-                        Resend code
-                    </button>
+                    <button type="submit" class="btn btn--ghost btn--sm">Log out</button>
                 </form>
-                &middot;
-            @endif
-            <a href="#" id="toggle-recovery">Use a recovery code</a>
+            </div>
         </div>
-
-        <form method="POST" action="{{ route('logout') }}" style="margin-top: 0.5rem; font-size: 0.875rem;">
-            @csrf
-            <button type="submit" style="background: none; border: none; color: inherit; text-decoration: underline; cursor: pointer; padding: 0; font-size: inherit;">
-                Log out
-            </button>
-        </form>
     </div>
 
     <script>

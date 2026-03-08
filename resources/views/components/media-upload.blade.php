@@ -1,7 +1,7 @@
 @props(['name', 'label', 'max' => 20])
 
-<div>
-    <label>{{ $label }}</label>
+<div class="form-group">
+    <label class="form-label">{{ $label }}</label>
     <div data-media-upload data-max="{{ $max }}" class="media-upload">
         <div data-media-upload-preview class="media-upload__preview"></div>
 
@@ -26,9 +26,9 @@
         <x-media-capture />
     </div>
     @error($name)
-    <p>{{ $message }}</p>
+    <p class="form-error">{{ $message }}</p>
     @enderror
     @error($name . '.*')
-    <p>{{ $message }}</p>
+    <p class="form-error">{{ $message }}</p>
     @enderror
 </div>

@@ -14,11 +14,11 @@
 </div>
 
 <dialog data-media-capture-dialog class="media-capture__dialog">
-    <article>
-        <header>
-            <button type="button" data-capture-close aria-label="Close" rel="prev"></button>
+    <div class="media-capture__dialog-content">
+        <div class="media-capture__dialog-header">
+            <button type="button" data-capture-close class="btn btn--ghost btn--sm" aria-label="Close">&times;</button>
             <span data-capture-title>Record</span>
-        </header>
+        </div>
 
         <div data-capture-body class="media-capture__body">
             <video data-capture-video-preview class="media-capture__video-preview" autoplay muted playsinline hidden></video>
@@ -29,12 +29,12 @@
             <p data-capture-error class="media-capture__error" hidden></p>
         </div>
 
-        <footer class="media-capture__footer">
-            <button type="button" data-capture-start class="media-capture__control" hidden>Start</button>
-            <button type="button" data-capture-stop class="media-capture__control media-capture__control--stop" hidden>Stop</button>
-            <button type="button" data-capture-snap class="media-capture__control" hidden>Capture</button>
-            <button type="button" data-capture-retake class="media-capture__control secondary" hidden>Retake</button>
-            <button type="button" data-capture-use class="media-capture__control" hidden>Use Photo</button>
-        </footer>
-    </article>
+        <div class="media-capture__footer">
+            <button type="button" data-capture-start class="media-capture__control btn btn--primary" hidden>Start</button>
+            <button type="button" data-capture-stop class="media-capture__control media-capture__control--stop btn btn--danger" hidden>Stop</button>
+            <button type="button" data-capture-snap class="media-capture__control btn btn--primary" hidden>Capture</button>
+            <button type="button" data-capture-retake class="media-capture__control btn btn--secondary" hidden>Retake</button>
+            <button type="button" data-capture-use class="media-capture__control btn btn--primary" hidden>Use Photo</button>
+        </div>
+    </div>
 </dialog>

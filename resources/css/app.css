@@ -3,10 +3,13 @@
 @import "layout.css";
 @import "header-footer.css";
 
-/*Templates*/
+/* Views */
 @import "views/login.css";
+@import "views/feed.css";
+@import "views/create-memory.css";
+@import "views/settings.css";
 
-/*Components*/
+/* Components */
 @import "components/memory-card.css";
 @import "components/rich-editor.css";
 @import "components/media-upload.css";

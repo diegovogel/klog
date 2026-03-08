@@ -1,8 +1,58 @@
-.site-header__title {
-    text-align: center;
-    font-size: 3rem;
+.site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 44rem;
+    margin-inline: auto;
+    padding: var(--klog-space-lg);
 }
 
-.page-title {
-    text-align: center;
+.site-header__logo {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--klog-text);
+    text-decoration: none;
+
+    &:hover {
+        color: var(--klog-primary);
+    }
+}
+
+.site-header__nav {
+    display: flex;
+    align-items: center;
+    gap: var(--klog-space-md);
+}
+
+@media (min-width: 30rem) {
+    .site-header__nav {
+        gap: var(--klog-space-lg);
+    }
+}
+
+.site-header__link {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--klog-text-secondary);
+    text-decoration: none;
+
+    &:hover {
+        color: var(--klog-text);
+    }
+}
+
+.site-header__link--primary {
+    background-color: var(--klog-primary);
+    color: var(--klog-primary-text);
+    padding: 0.4rem 1rem;
+    border-radius: var(--klog-radius);
+    font-weight: 600;
+    font-size: 0.875rem;
+
+    &:hover {
+        background-color: var(--klog-primary-hover);
+        color: var(--klog-primary-text);
+    }
 }

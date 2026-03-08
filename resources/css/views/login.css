@@ -1,4 +1,31 @@
-.login-wrapper {
-    max-width: 30rem;
-    margin-inline: auto;
+.login-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: var(--klog-space-lg);
+}
+
+.login-card {
+    width: 100%;
+    max-width: 24rem;
+}
+
+.login-card__header {
+    text-align: center;
+    margin-block-end: var(--klog-space-2xl);
+}
+
+.login-card__logo {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--klog-text);
+    margin: 0;
+}
+
+.login-card__tagline {
+    font-size: 0.875rem;
+    color: var(--klog-text-muted);
+    margin-block-start: var(--klog-space-xs);
 }

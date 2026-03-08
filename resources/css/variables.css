@@ -1,3 +1,63 @@
 :root {
-    
+    /* Color palette — warm but restrained */
+    --klog-bg: #faf9f7;
+    --klog-bg-card: #ffffff;
+    --klog-bg-subtle: #f4f2ef;
+    --klog-bg-input: #ffffff;
+    --klog-border: #e5e0da;
+    --klog-border-light: #ece8e3;
+    --klog-text: #2c2825;
+    --klog-text-secondary: #6b6560;
+    --klog-text-muted: #9b9590;
+    --klog-primary: #b45a35;
+    --klog-primary-hover: #9a4d2e;
+    --klog-primary-text: #ffffff;
+    --klog-accent: #d4a574;
+    --klog-danger: #c44040;
+    --klog-success: #3d8b5e;
+    --klog-link: #b45a35;
+    --klog-link-hover: #9a4d2e;
+    --klog-shadow-sm: 0 1px 2px rgba(44, 40, 37, 0.05);
+    --klog-shadow: 0 1px 3px rgba(44, 40, 37, 0.07), 0 1px 2px rgba(44, 40, 37, 0.04);
+    --klog-shadow-md: 0 4px 12px rgba(44, 40, 37, 0.08), 0 2px 4px rgba(44, 40, 37, 0.04);
+    --klog-radius: 8px;
+    --klog-radius-lg: 12px;
+
+    /* Typography — clean grotesque like Mailchimp */
+    --klog-font-sans: "Helvetica Neue", Helvetica, Arial, system-ui, -apple-system, sans-serif;
+    --klog-font-mono: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
+    --klog-leading: 1.6;
+    --klog-leading-tight: 1.25;
+
+    /* Spacing scale */
+    --klog-space-xs: 0.25rem;
+    --klog-space-sm: 0.5rem;
+    --klog-space-md: 1rem;
+    --klog-space-lg: 1.5rem;
+    --klog-space-xl: 2rem;
+    --klog-space-2xl: 3rem;
+    --klog-space-3xl: 4rem;
+
+    /* Pico overrides */
+    --pico-font-family: var(--klog-font-sans);
+    --pico-font-size: 100%;
+    --pico-line-height: var(--klog-leading);
+    --pico-border-radius: var(--klog-radius);
+    --pico-background-color: var(--klog-bg);
+    --pico-color: var(--klog-text);
+    --pico-muted-color: var(--klog-text-secondary);
+    --pico-muted-border-color: var(--klog-border);
+    --pico-primary: var(--klog-primary);
+    --pico-primary-hover: var(--klog-primary-hover);
+    --pico-primary-background: var(--klog-primary);
+    --pico-primary-hover-background: var(--klog-primary-hover);
+    --pico-primary-inverse: var(--klog-primary-text);
+    --pico-secondary: var(--klog-text-secondary);
+    --pico-secondary-hover: var(--klog-text);
+    --pico-form-element-background-color: var(--klog-bg-input);
+    --pico-form-element-border-color: var(--klog-border);
+    --pico-form-element-active-border-color: var(--klog-primary);
+    --pico-card-background-color: var(--klog-bg-card);
+    --pico-card-border-color: var(--klog-border-light);
+    --pico-del-color: var(--klog-danger);
 }

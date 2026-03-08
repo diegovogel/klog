@@ -1,0 +1,91 @@
+.settings-section {
+    margin-block-end: var(--klog-space-2xl);
+}
+
+.settings-section__status {
+    font-size: 0.9375rem;
+    margin-block-end: var(--klog-space-lg);
+}
+
+.settings-section__status-badge {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    vertical-align: middle;
+    margin-inline-start: var(--klog-space-xs);
+}
+
+.settings-section__status-badge--enabled {
+    background-color: #ecfdf5;
+    color: #065f46;
+}
+
+.settings-section__status-badge--disabled {
+    background-color: var(--klog-bg-subtle);
+    color: var(--klog-text-muted);
+}
+
+.settings-section__methods {
+    display: flex;
+    gap: var(--klog-space-sm);
+    flex-wrap: wrap;
+}
+
+.recovery-codes {
+    background-color: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: var(--klog-radius);
+    padding: var(--klog-space-lg);
+    margin-block-end: var(--klog-space-xl);
+}
+
+.recovery-codes__title {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    margin-block-end: var(--klog-space-xs);
+}
+
+.recovery-codes__description {
+    font-size: 0.8125rem;
+    color: var(--klog-text-secondary);
+    margin-block-end: var(--klog-space-md);
+}
+
+.recovery-codes__list {
+    background-color: #fff;
+    padding: var(--klog-space-md);
+    border-radius: var(--klog-radius);
+    font-family: var(--klog-font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.8;
+    white-space: pre;
+    margin: 0;
+}
+
+.qr-code-wrapper {
+    display: inline-block;
+    background: #fff;
+    padding: var(--klog-space-md);
+    border-radius: var(--klog-radius);
+    border: 1px solid var(--klog-border-light);
+    margin-block: var(--klog-space-lg);
+}
+
+.manual-key {
+    background-color: var(--klog-bg-subtle);
+    padding: var(--klog-space-md);
+    border-radius: var(--klog-radius);
+    font-family: var(--klog-font-mono);
+    font-size: 0.8125rem;
+    letter-spacing: 2px;
+    margin-block-start: var(--klog-space-sm);
+}
+
+.back-link {
+    font-size: 0.875rem;
+    margin-block-start: var(--klog-space-xl);
+}

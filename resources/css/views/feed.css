@@ -1,0 +1,104 @@
+.feed-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-block-end: var(--klog-space-xl);
+}
+
+.feed-header__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: var(--klog-leading-tight);
+    color: var(--klog-text);
+    margin: 0;
+}
+
+.feed__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--klog-space-xl);
+}
+
+.feed__empty {
+    text-align: center;
+    padding: var(--klog-space-3xl) var(--klog-space-lg);
+    color: var(--klog-text-muted);
+}
+
+.feed__empty-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--klog-text-secondary);
+    margin-block-end: var(--klog-space-sm);
+}
+
+.feed__pagination {
+    margin-block-start: var(--klog-space-2xl);
+}
+
+/* Pagination */
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--klog-space-md);
+}
+
+.pagination__summary {
+    font-size: 0.8125rem;
+    color: var(--klog-text-muted);
+    white-space: nowrap;
+}
+
+.pagination__links {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.pagination__item {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    height: 2rem;
+    padding: 0 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--klog-text-secondary);
+    text-decoration: none;
+    border-radius: var(--klog-radius);
+    transition: background-color 0.15s ease, color 0.15s ease;
+
+    &:hover {
+        background-color: var(--klog-bg-subtle);
+        color: var(--klog-text);
+    }
+}
+
+.pagination__item--active {
+    background-color: var(--klog-primary);
+    color: var(--klog-primary-text);
+    font-weight: 600;
+}
+
+.pagination__item--disabled {
+    color: var(--klog-text-muted);
+    opacity: 0.4;
+    cursor: default;
+
+    &:hover {
+        background-color: transparent;
+        color: var(--klog-text-muted);
+    }
+}
+
+.pagination__item--dots {
+    cursor: default;
+
+    &:hover {
+        background-color: transparent;
+    }
+}
