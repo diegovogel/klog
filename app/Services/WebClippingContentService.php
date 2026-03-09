@@ -88,6 +88,10 @@ class WebClippingContentService
         // Decode HTML entities
         $html = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
+        // Re-apply strip_tags after entity decoding to catch any encoded tags
+        // that were decoded into real tags (e.g., &lt;script&gt; → <script>)
+        $html = strip_tags($html, self::ALLOWED_TAGS);
+
         // Collapse runs of whitespace (spaces/tabs) within text to single spaces
         $html = preg_replace('/[^\S\n]+/', ' ', $html);
 

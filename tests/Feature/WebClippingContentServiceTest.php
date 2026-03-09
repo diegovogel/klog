@@ -219,5 +219,27 @@ describe('WebClippingContentService', function () {
 
             expect($result['content'])->toBe('<p>Content</p>');
         });
+
+        it('strips encoded script tags after entity decoding', function () {
+            Http::fake([
+                '*' => Http::response('<body><p>&lt;script&gt;alert(1)&lt;/script&gt;</p></body>'),
+            ]);
+
+            $result = $this->service->extractText('https://example.com');
+
+            expect($result['content'])->not->toContain('<script>')
+                ->and($result['content'])->toContain('alert(1)');
+        });
+
+        it('strips encoded img tags with event handlers after entity decoding', function () {
+            Http::fake([
+                '*' => Http::response('<body><p>Safe text &lt;img src=x onerror=alert(1)&gt;</p></body>'),
+            ]);
+
+            $result = $this->service->extractText('https://example.com');
+
+            expect($result['content'])->not->toContain('<img')
+                ->and($result['content'])->not->toContain('onerror');
+        });
     });
 });
