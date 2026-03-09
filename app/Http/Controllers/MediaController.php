@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\MimeType;
 use App\Models\Media;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -16,8 +17,10 @@ class MediaController extends Controller
 
         abort_unless($disk->exists($media->path), 404);
 
+        $contentType = MimeType::tryFrom($media->mime_type)?->value ?? 'application/octet-stream';
+
         return response()->file($disk->path($media->path), [
-            'Content-Type' => $media->mime_type,
+            'Content-Type' => $contentType,
         ]);
     }
 }

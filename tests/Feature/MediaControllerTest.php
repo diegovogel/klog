@@ -83,6 +83,21 @@ describe('media serving', function () {
             ->assertHeader('Content-Type', 'audio/mp4');
     });
 
+    it('falls back to application/octet-stream for unrecognized mime types', function () {
+        $user = User::factory()->create();
+        $media = Media::factory()->image()->create([
+            'disk' => 'local',
+            'mime_type' => 'application/x-malicious',
+        ]);
+
+        Storage::disk('local')->put($media->path, 'fake-content');
+
+        $this->actingAs($user)
+            ->get(route('media.show', $media->filename))
+            ->assertSuccessful()
+            ->assertHeader('Content-Type', 'application/octet-stream');
+    });
+
     it('includes Accept-Ranges header in normal responses', function () {
         $user = User::factory()->create();
         $media = Media::factory()->image()->create(['disk' => 'local']);
