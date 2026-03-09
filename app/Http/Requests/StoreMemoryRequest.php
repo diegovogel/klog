@@ -34,7 +34,7 @@ class StoreMemoryRequest extends FormRequest
             'memory_date' => ['required', 'date', 'before_or_equal:today'],
             'content' => ['nullable', 'string', 'max:65535'],
             'clippings' => ['nullable', 'array'],
-            'clippings.*' => ['required', 'url', 'max:2048'],
+            'clippings.*' => ['required', 'url:http,https', 'max:2048'],
             'media' => ['nullable', 'array', 'max:20'],
             'media.*' => [
                 'file',
