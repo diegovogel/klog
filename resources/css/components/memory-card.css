@@ -112,6 +112,48 @@
     }
 }
 
+.memory-card__footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--klog-space-md);
+    border-top: 1px solid var(--klog-border-light);
+    padding-block-start: var(--klog-space-md);
+}
+
+.memory-card__footer time {
+    font-size: 0.8125rem;
+    color: var(--klog-text-muted);
+}
+
+.memory-card__footer form {
+    margin: 0;
+}
+
+.memory-card__delete-btn {
+    all: unset;
+    cursor: pointer;
+    font-size: 0.8125rem;
+    font-family: var(--klog-font-sans);
+    color: var(--klog-text-muted);
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--klog-radius);
+    transition: color 0.15s ease;
+
+    &:hover {
+        color: var(--klog-text-secondary);
+    }
+
+    &.memory-card__delete-btn--confirm {
+        color: var(--klog-danger);
+        font-weight: 600;
+
+        &:hover {
+            color: var(--klog-danger);
+        }
+    }
+}
+
 .memory-card__images img {
     border-radius: var(--klog-radius);
 }

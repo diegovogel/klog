@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 
 class Memory extends Model
 {
@@ -112,5 +113,41 @@ class Memory extends Model
             ->map(fn ($name) => Tag::findOrCreateByName($name)->id);
 
         $this->tags()->syncWithoutDetaching($tagIds);
+    }
+
+    /**
+     * Soft-delete this memory and all related media and web clippings.
+     */
+    public function deleteWithRelations(): void
+    {
+        $this->media()->delete();
+
+        $this->webClippings->each(function (WebClipping $clipping) {
+            $clipping->screenshot()?->delete();
+            $clipping->delete();
+        });
+
+        $this->delete();
+    }
+
+    /**
+     * Permanently delete this memory, all related records, and media files from disk.
+     */
+    public function forceDeleteWithRelations(): void
+    {
+        $this->media->each(function (Media $media) {
+            Storage::disk('local')->delete($media->path);
+            $media->forceDelete();
+        });
+
+        $this->webClippings->each(function (WebClipping $clipping) {
+            if ($clipping->screenshot) {
+                Storage::disk('local')->delete($clipping->screenshot->path);
+                $clipping->screenshot->forceDelete();
+            }
+            $clipping->forceDelete();
+        });
+
+        $this->forceDelete();
     }
 }

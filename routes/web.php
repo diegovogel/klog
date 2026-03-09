@@ -95,6 +95,12 @@ Route::middleware('auth')->group(function () {
             return redirect('/')->with('success', 'Memory saved.');
         })->name('memories.store');
 
+        Route::delete('memories/{memory}', function (Memory $memory) {
+            $memory->deleteWithRelations();
+
+            return redirect('/')->with('success', 'Memory deleted.');
+        })->name('memories.destroy');
+
         Route::get('settings/two-factor', [TwoFactorSettingsController::class, 'show'])
             ->name('two-factor.settings');
         Route::post('settings/two-factor/enable', [TwoFactorSettingsController::class, 'enable'])

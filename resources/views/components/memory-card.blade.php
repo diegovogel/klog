@@ -71,4 +71,13 @@
             @endforeach
         </div>
     @endif
+
+    <footer class="memory-card__footer">
+        <time datetime="{{ $memory->memory_date->toDateString() }}">{{ $memory->memory_date->format('M j, Y') }}</time>
+        <form method="POST" action="{{ route('memories.destroy', $memory) }}" data-confirm-delete>
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="memory-card__delete-btn">Delete</button>
+        </form>
+    </footer>
 </article>
