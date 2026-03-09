@@ -84,4 +84,28 @@ describe('HtmlSanitizer', function () {
 
         expect($this->sanitizer->sanitize($html))->toBe('hello');
     });
+
+    it('blocks data: URLs in href', function () {
+        $html = '<a href="data:text/html,<script>alert(1)</script>">click me</a>';
+
+        expect($this->sanitizer->sanitize($html))->toBe('<a>click me</a>');
+    });
+
+    it('blocks vbscript: URLs in href', function () {
+        $html = '<a href="vbscript:MsgBox(1)">click me</a>';
+
+        expect($this->sanitizer->sanitize($html))->toBe('<a>click me</a>');
+    });
+
+    it('preserves http:// URLs in href', function () {
+        $html = '<a href="http://example.com">link</a>';
+
+        expect($this->sanitizer->sanitize($html))->toBe($html);
+    });
+
+    it('preserves https:// URLs in href', function () {
+        $html = '<a href="https://example.com">link</a>';
+
+        expect($this->sanitizer->sanitize($html))->toBe($html);
+    });
 });

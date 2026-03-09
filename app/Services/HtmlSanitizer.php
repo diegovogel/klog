@@ -62,8 +62,8 @@ class HtmlSanitizer
                 continue;
             }
 
-            // Block javascript: URLs in href
-            if ($name === 'href' && preg_match('/^\s*javascript\s*:/i', $value)) {
+            // Only allow http/https URLs in href (blocks javascript:, data:, etc.)
+            if ($name === 'href' && ! preg_match('/^\s*https?:\/\//i', $value)) {
                 continue;
             }
 
