@@ -18,9 +18,11 @@ class MediaController extends Controller
         abort_unless($disk->exists($media->path), 404);
 
         $contentType = MimeType::tryFrom($media->mime_type)?->value ?? 'application/octet-stream';
+        $disposition = 'inline; filename="'.addcslashes($media->original_filename, '"\\').'"';
 
         return response()->file($disk->path($media->path), [
             'Content-Type' => $contentType,
+            'Content-Disposition' => $disposition,
         ]);
     }
 }

@@ -83,6 +83,21 @@ describe('media serving', function () {
             ->assertHeader('Content-Type', 'audio/mp4');
     });
 
+    it('includes Content-Disposition header with original filename', function () {
+        $user = User::factory()->create();
+        $media = Media::factory()->image()->create([
+            'disk' => 'local',
+            'original_filename' => 'family-photo.jpg',
+        ]);
+
+        Storage::disk('local')->put($media->path, 'fake-image-content');
+
+        $this->actingAs($user)
+            ->get(route('media.show', $media->filename))
+            ->assertSuccessful()
+            ->assertHeader('Content-Disposition', 'inline; filename="family-photo.jpg"');
+    });
+
     it('falls back to application/octet-stream for unrecognized mime types', function () {
         $user = User::factory()->create();
         $media = Media::factory()->image()->create([
