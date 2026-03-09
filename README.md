@@ -102,6 +102,18 @@ php artisan clippings:uninstall-screenshots
 
 This removes the dependencies, which automatically deactivates the scheduled task.
 
+### Health Check
+
+Laravel's built-in `/up` health check endpoint is disabled by default. If you use an uptime monitor or load balancer
+that needs to verify the app is running, you can enable it by setting the following in your `.env` file:
+
+```env
+HEALTH_CHECK_ENABLED=true
+```
+
+When enabled, the `/up` route returns a `200` response to confirm the app is running. It is public (no authentication
+required).
+
 ## Roadmap
 
 - [ ] **Static export command.** Something like `php artisan memories:export-static`. This would generate HTML files for
