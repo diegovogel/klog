@@ -41,6 +41,12 @@ video {
     padding-block: var(--klog-space-xl);
 }
 
+@supports (padding: env(safe-area-inset-bottom)) {
+    .layout__main {
+        padding-bottom: calc(var(--klog-space-xl) + env(safe-area-inset-bottom));
+    }
+}
+
 /* ===== Shared form styles ===== */
 .form-group {
     margin-block-end: var(--klog-space-lg);

@@ -6,6 +6,14 @@
     padding: var(--klog-space-lg);
 }
 
+@supports (min-height: 100dvh) {
+    .login-page {
+        min-height: 100dvh;
+        padding-top: calc(var(--klog-space-lg) + env(safe-area-inset-top));
+        padding-bottom: calc(var(--klog-space-lg) + env(safe-area-inset-bottom));
+    }
+}
+
 .login-card {
     width: 100%;
     max-width: 24rem;

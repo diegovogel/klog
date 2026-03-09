@@ -32,6 +32,6 @@ describe('SecurityHeaders middleware', function () {
     it('sets Permissions-Policy', function () {
         $response = $this->get('/login');
 
-        $response->assertHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+        $response->assertHeader('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=()');
     });
 });

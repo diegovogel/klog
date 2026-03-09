@@ -10,6 +10,40 @@ use App\Services\HtmlSanitizer;
 use App\Services\MediaStorageService;
 use Illuminate\Support\Facades\Route;
 
+/*
+|--------------------------------------------------------------------------
+| PWA Routes (public, no auth)
+|--------------------------------------------------------------------------
+*/
+
+Route::get('manifest.webmanifest', function () {
+    return response()->json([
+        'name' => config('app.name'),
+        'short_name' => config('app.name'),
+        'description' => 'Your personal memory keeper',
+        'start_url' => '/',
+        'scope' => '/',
+        'display' => 'standalone',
+        'background_color' => '#faf9f7',
+        'theme_color' => '#b45a35',
+        'orientation' => 'any',
+        'icons' => [
+            ['src' => '/icons/icon-192.png', 'sizes' => '192x192', 'type' => 'image/png'],
+            ['src' => '/icons/icon-512.png', 'sizes' => '512x512', 'type' => 'image/png'],
+            ['src' => '/icons/icon-maskable-192.png', 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'maskable'],
+            ['src' => '/icons/icon-maskable-512.png', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
+        ],
+    ], 200, ['Content-Type' => 'application/manifest+json']);
+})->name('pwa.manifest');
+
+Route::get('offline', fn () => view('offline'))->name('offline');
+
+/*
+|--------------------------------------------------------------------------
+| Auth Routes
+|--------------------------------------------------------------------------
+*/
+
 Route::middleware('guest')->group(function () {
     Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('login', [LoginController::class, 'login']);

@@ -8,6 +8,12 @@
     padding: var(--klog-space-lg);
 }
 
+@supports (padding: env(safe-area-inset-top)) {
+    .site-header {
+        padding-top: calc(var(--klog-space-lg) + env(safe-area-inset-top));
+    }
+}
+
 .site-header__logo {
     font-size: 1.25rem;
     font-weight: 700;
