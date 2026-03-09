@@ -23,6 +23,7 @@ Route::middleware('auth')->group(function () {
     Route::post('two-factor/challenge', [TwoFactorChallengeController::class, 'verify'])
         ->name('two-factor.verify');
     Route::post('two-factor/resend', [TwoFactorChallengeController::class, 'resend'])
+        ->middleware('throttle:5,1')
         ->name('two-factor.resend');
 
     Route::middleware('two-factor')->group(function () {

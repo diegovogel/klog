@@ -226,6 +226,22 @@ describe('two-factor challenge', function () {
 
             Mail::assertNothingSent();
         });
+
+        it('rate limits resend to 5 per minute', function () {
+            Mail::fake();
+
+            $user = User::factory()->withTwoFactor(TwoFactorMethod::EMAIL)->create();
+
+            for ($i = 0; $i < 5; $i++) {
+                $this->actingAs($user)
+                    ->post(route('two-factor.resend'))
+                    ->assertRedirect();
+            }
+
+            $this->actingAs($user)
+                ->post(route('two-factor.resend'))
+                ->assertStatus(429);
+        });
     });
 
     describe('logout access', function () {
