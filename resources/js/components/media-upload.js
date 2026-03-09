@@ -20,11 +20,19 @@ document.querySelectorAll('[data-media-upload]').forEach(upload => {
     if (!input || !preview || !dropzone) return
 
     const dataTransfer = new DataTransfer()
+    const form = input.closest('form')
 
     input.addEventListener('change', () => {
         addFiles(input.files)
         input.value = ''
     })
+
+    // Re-sync files into the input right before submission because
+    // input.value = '' (needed to allow re-selecting the same file)
+    // clears input.files as a side-effect.
+    if (form) {
+        form.addEventListener('submit', () => syncInput())
+    }
 
     // Drag and drop
     dropzone.addEventListener('dragover', e => {
