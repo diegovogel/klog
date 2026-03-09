@@ -22,14 +22,21 @@ document.querySelectorAll('[data-media-upload]').forEach(upload => {
     const dataTransfer = new DataTransfer()
     const form = input.closest('form')
 
-    input.addEventListener('change', () => {
-        addFiles(input.files)
+    // Clear the input value right before opening the file picker so
+    // re-selecting the same file still triggers a change event.
+    // We do this on click (before selection) instead of after the
+    // change event, so input.files stays populated for form submission.
+    input.addEventListener('click', () => {
         input.value = ''
     })
 
-    // Re-sync files into the input right before submission because
-    // input.value = '' (needed to allow re-selecting the same file)
-    // clears input.files as a side-effect.
+    input.addEventListener('change', () => {
+        addFiles(input.files)
+    })
+
+    // Safety net: if the user opens the file picker and cancels,
+    // input.files will be empty (cleared by the click handler).
+    // Re-sync from dataTransfer before submission to restore them.
     if (form) {
         form.addEventListener('submit', () => syncInput())
     }
@@ -86,7 +93,15 @@ document.querySelectorAll('[data-media-upload]').forEach(upload => {
     }
 
     function syncInput () {
-        input.files = dataTransfer.files
+        // Build a fresh DataTransfer to avoid a Chrome quirk where
+        // assigning dataTransfer.files directly to input.files creates
+        // a link — a subsequent input.value = '' would corrupt both.
+        const dt = new DataTransfer()
+        for (let i = 0; i < dataTransfer.items.length; i++) {
+            const file = dataTransfer.items[i].getAsFile()
+            if (file) dt.items.add(file)
+        }
+        input.files = dt.files
     }
 
     function updateCounter () {
