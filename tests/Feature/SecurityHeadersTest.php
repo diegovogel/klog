@@ -16,4 +16,22 @@ describe('SecurityHeaders middleware', function () {
 
         $response->assertHeader('X-Content-Type-Options', 'nosniff');
     });
+
+    it('sets X-Frame-Options DENY', function () {
+        $response = $this->get('/login');
+
+        $response->assertHeader('X-Frame-Options', 'DENY');
+    });
+
+    it('sets Referrer-Policy', function () {
+        $response = $this->get('/login');
+
+        $response->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    });
+
+    it('sets Permissions-Policy', function () {
+        $response = $this->get('/login');
+
+        $response->assertHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    });
 });
