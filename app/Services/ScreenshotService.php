@@ -23,12 +23,17 @@ class ScreenshotService
     {
         $tempPath = sys_get_temp_dir().'/'.uniqid('klog_screenshot_').'.png';
 
-        \Spatie\Browsershot\Browsershot::url($url)
+        $browsershot = \Spatie\Browsershot\Browsershot::url($url)
             ->windowSize(1280, 960)
             ->fullPage()
             ->waitUntilNetworkIdle(false)
-            ->setOption('args', ['--no-sandbox'])
-            ->userAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36')
+            ->userAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36');
+
+        if (config('klog.screenshots.no_sandbox', true)) {
+            $browsershot->setOption('args', ['--no-sandbox']);
+        }
+
+        $browsershot
             ->setOption('addStyleTag', json_encode(['content' => self::overlayHidingCss()]))
             ->setOption('addScriptTag', json_encode(['content' => self::overlayDismissalScript()]))
             ->delay(1000)
