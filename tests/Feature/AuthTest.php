@@ -34,13 +34,13 @@ describe('login', function () {
             ->assertSee('name="remember"', false);
     });
 
-    it('should set a remember cookie when stay logged in is checked', function () {
+    it('should set a remember cookie when stay logged in is checked', function (mixed $rememberValue) {
         $user = User::factory()->create(['password' => 'secret123']);
 
         $response = $this->post('/login', [
             'email' => $user->email,
             'password' => 'secret123',
-            'remember' => true,
+            'remember' => $rememberValue,
         ])->assertRedirect('/');
 
         $this->assertAuthenticatedAs($user);
@@ -49,7 +49,7 @@ describe('login', function () {
             ->first(fn ($cookie) => str_starts_with($cookie->getName(), 'remember_web_'));
 
         expect($rememberCookie)->not->toBeNull();
-    });
+    })->with([true, '1']);
 
     it('should not set a remember cookie when stay logged in is unchecked', function () {
         $user = User::factory()->create(['password' => 'secret123']);

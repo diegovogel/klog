@@ -49,6 +49,7 @@
                         <input
                             type="checkbox"
                             name="remember"
+                            value="1"
                             {{ old('remember') ? 'checked' : '' }}
                         >
                         Stay logged in
