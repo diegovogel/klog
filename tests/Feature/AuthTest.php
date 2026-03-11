@@ -27,6 +27,46 @@ describe('login', function () {
         $this->assertAuthenticatedAs($user);
     });
 
+    it('should show a stay logged in checkbox', function () {
+        $this->get('/login')
+            ->assertStatus(200)
+            ->assertSee('Stay logged in')
+            ->assertSee('name="remember"', false);
+    });
+
+    it('should set a remember cookie when stay logged in is checked', function () {
+        $user = User::factory()->create(['password' => 'secret123']);
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'secret123',
+            'remember' => true,
+        ])->assertRedirect('/');
+
+        $this->assertAuthenticatedAs($user);
+
+        $rememberCookie = collect($response->headers->getCookies())
+            ->first(fn ($cookie) => str_starts_with($cookie->getName(), 'remember_web_'));
+
+        expect($rememberCookie)->not->toBeNull();
+    });
+
+    it('should not set a remember cookie when stay logged in is unchecked', function () {
+        $user = User::factory()->create(['password' => 'secret123']);
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'secret123',
+        ])->assertRedirect('/');
+
+        $this->assertAuthenticatedAs($user);
+
+        $rememberCookie = collect($response->headers->getCookies())
+            ->first(fn ($cookie) => str_starts_with($cookie->getName(), 'remember_web_'));
+
+        expect($rememberCookie)->toBeNull();
+    });
+
     it('should reject invalid credentials', function () {
         $user = User::factory()->create();
 

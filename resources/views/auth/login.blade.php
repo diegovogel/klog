@@ -44,6 +44,17 @@
                     @enderror
                 </div>
 
+                <div class="form-group form-group--checkbox">
+                    <label class="form-label form-label--checkbox">
+                        <input
+                            type="checkbox"
+                            name="remember"
+                            {{ old('remember') ? 'checked' : '' }}
+                        >
+                        Stay logged in
+                    </label>
+                </div>
+
                 <button type="submit" class="btn btn--primary btn--block">Log in</button>
             </form>
         </div>
