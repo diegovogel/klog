@@ -17,14 +17,6 @@ class TwoFactorSettingsController extends Controller
         private AuthenticatorService $authenticatorService,
     ) {}
 
-    public function show(Request $request): View
-    {
-        return view('settings.two-factor', [
-            'user' => $request->user(),
-            'authenticatorAvailable' => $this->authenticatorService->isAvailable(),
-        ]);
-    }
-
     public function enable(Request $request): RedirectResponse
     {
         $request->validate([
@@ -44,7 +36,7 @@ class TwoFactorSettingsController extends Controller
 
         $recoveryCodes = $this->twoFactorService->enable($request->user(), $method);
 
-        return redirect()->route('two-factor.settings')
+        return redirect()->route('settings')
             ->with('recovery_codes', $recoveryCodes)
             ->with('success', 'Two-factor authentication has been enabled.');
     }
@@ -57,7 +49,7 @@ class TwoFactorSettingsController extends Controller
 
         $this->twoFactorService->disable($request->user());
 
-        return redirect()->route('two-factor.settings')
+        return redirect()->route('settings')
             ->with('success', 'Two-factor authentication has been disabled.')
             ->withCookie(cookie()->forget('two_factor_remember'));
     }
@@ -74,7 +66,7 @@ class TwoFactorSettingsController extends Controller
             'two_factor_recovery_codes' => TwoFactorService::hashRecoveryCodes($codes),
         ]);
 
-        return redirect()->route('two-factor.settings')
+        return redirect()->route('settings')
             ->with('recovery_codes', $codes)
             ->with('success', 'Recovery codes have been regenerated.');
     }
@@ -119,7 +111,7 @@ class TwoFactorSettingsController extends Controller
 
         $request->session()->forget('two_factor_setup_secret');
 
-        return redirect()->route('two-factor.settings')
+        return redirect()->route('settings')
             ->with('recovery_codes', $recoveryCodes)
             ->with('success', 'Authenticator app has been configured.');
     }

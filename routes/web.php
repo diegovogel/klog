@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\MediaController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TwoFactorSettingsController;
 use App\Http\Requests\StoreMemoryRequest;
 use App\Models\Memory;
@@ -101,8 +102,8 @@ Route::middleware('auth')->group(function () {
             return redirect('/')->with('success', 'Memory deleted.');
         })->name('memories.destroy');
 
-        Route::get('settings/two-factor', [TwoFactorSettingsController::class, 'show'])
-            ->name('two-factor.settings');
+        Route::get('settings', [SettingsController::class, 'show'])
+            ->name('settings');
         Route::post('settings/two-factor/enable', [TwoFactorSettingsController::class, 'enable'])
             ->name('two-factor.enable');
         Route::post('settings/two-factor/disable', [TwoFactorSettingsController::class, 'disable'])

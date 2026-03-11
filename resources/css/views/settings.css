@@ -2,6 +2,13 @@
     margin-block-end: var(--klog-space-2xl);
 }
 
+.settings-section__title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-block-end: var(--klog-space-lg);
+}
+
 .settings-section__status {
     font-size: 0.9375rem;
     margin-block-end: var(--klog-space-lg);

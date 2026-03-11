@@ -212,6 +212,18 @@ textarea.form-input {
     padding: var(--klog-space-xl);
 }
 
+/* ===== Page header ===== */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-block-end: var(--klog-space-xl);
+}
+
+.page-header .page-title {
+    margin-block-end: 0;
+}
+
 /* ===== Page title ===== */
 .page-title {
     font-size: 1.5rem;

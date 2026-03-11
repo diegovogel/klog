@@ -39,6 +39,6 @@
     </form>
 
     <p class="back-link">
-        <a href="{{ route('two-factor.settings') }}">&larr; Cancel</a>
+        <a href="{{ route('settings') }}">&larr; Cancel</a>
     </p>
 </x-layouts.app>
