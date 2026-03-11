@@ -11,14 +11,15 @@ beforeEach(function () {
 });
 
 describe('settings page', function () {
-    it('shows the two-factor settings page', function () {
-        $this->get(route('two-factor.settings'))
+    it('shows the settings page with two-factor section', function () {
+        $this->get(route('settings'))
             ->assertSuccessful()
+            ->assertSee('Settings')
             ->assertSee('Two-Factor Authentication');
     });
 
     it('shows status as disabled when 2fa is off', function () {
-        $this->get(route('two-factor.settings'))
+        $this->get(route('settings'))
             ->assertSuccessful()
             ->assertSee('Disabled');
     });
@@ -29,7 +30,7 @@ describe('settings page', function () {
             'two_factor_confirmed_at' => now(),
         ]);
 
-        $this->get(route('two-factor.settings'))
+        $this->get(route('settings'))
             ->assertSuccessful()
             ->assertSee('Enabled');
     });
@@ -40,7 +41,7 @@ describe('enable', function () {
         $this->post(route('two-factor.enable'), [
             'method' => 'email',
             'password' => 'password',
-        ])->assertRedirect(route('two-factor.settings'))
+        ])->assertRedirect(route('settings'))
             ->assertSessionHas('success')
             ->assertSessionHas('recovery_codes');
 
@@ -101,7 +102,7 @@ describe('disable', function () {
 
         $this->post(route('two-factor.disable'), [
             'password' => 'password',
-        ])->assertRedirect(route('two-factor.settings'))
+        ])->assertRedirect(route('settings'))
             ->assertSessionHas('success');
 
         $this->user->refresh();
@@ -138,7 +139,7 @@ describe('regenerate recovery codes', function () {
 
         $this->post(route('two-factor.recovery-codes'), [
             'password' => 'password',
-        ])->assertRedirect(route('two-factor.settings'))
+        ])->assertRedirect(route('settings'))
             ->assertSessionHas('recovery_codes')
             ->assertSessionHas('success');
     });
@@ -191,7 +192,7 @@ describe('authenticator confirmation', function () {
         $this->withSession(['two_factor_setup_secret' => 'TESTSECRET'])
             ->post(route('two-factor.authenticator.confirm'), [
                 'code' => '123456',
-            ])->assertRedirect(route('two-factor.settings'))
+            ])->assertRedirect(route('settings'))
             ->assertSessionHas('success')
             ->assertSessionHas('recovery_codes');
 

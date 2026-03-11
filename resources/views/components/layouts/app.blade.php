@@ -22,7 +22,7 @@
     <header class="site-header">
         <a href="/" class="site-header__logo">{{ config('app.name', 'Klog') }}</a>
         <nav class="site-header__nav">
-            <a href="{{ route('two-factor.settings') }}" class="site-header__link">Settings</a>
+            <a href="{{ route('settings') }}" class="site-header__link">Settings</a>
             <a href="{{ route('memories.create') }}" class="site-header__link--primary">+ New Memory</a>
         </nav>
     </header>
