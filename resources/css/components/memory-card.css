@@ -154,6 +154,24 @@
     }
 }
 
+.memory-card__media-processing,
+.memory-card__media-failed {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+    background-color: var(--klog-bg-subtle);
+    border: 1px dashed var(--klog-border);
+    border-radius: var(--klog-radius);
+    font-size: 0.875rem;
+    color: var(--klog-text-muted);
+}
+
+.memory-card__media-failed {
+    border-color: var(--klog-danger);
+    color: var(--klog-danger);
+}
+
 .memory-card__images img {
     border-radius: var(--klog-radius);
 }

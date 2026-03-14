@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Enums\MediaType;
 use App\Enums\MimeType;
+use App\Enums\ProcessingStatus;
 use App\Models\Media;
 use App\Models\Memory;
 use Exception;
@@ -75,6 +76,42 @@ class MediaFactory extends Factory
             'mime_type' => MimeType::MP4_AUDIO->value,
             'original_filename' => $fileName,
             'path' => $fileName,
+        ]);
+    }
+
+    public function heic(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'type' => MediaType::IMAGE->value,
+            'mime_type' => MimeType::HEIC->value,
+            'original_filename' => 'photo.heic',
+            'path' => 'uploads/2026/03/test.heic',
+            'processing_status' => ProcessingStatus::Pending,
+        ]);
+    }
+
+    public function mov(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'type' => MediaType::VIDEO->value,
+            'mime_type' => MimeType::MOV->value,
+            'original_filename' => 'video.MOV',
+            'path' => 'uploads/2026/03/test.mov',
+            'processing_status' => ProcessingStatus::Pending,
+        ]);
+    }
+
+    public function processing(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'processing_status' => ProcessingStatus::Processing,
+        ]);
+    }
+
+    public function failed(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'processing_status' => ProcessingStatus::Failed,
         ]);
     }
 

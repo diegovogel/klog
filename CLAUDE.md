@@ -74,6 +74,14 @@ php artisan 2fa:uninstall-authenticator      # Remove authenticator packages, mi
   same `uploads/YYYY/MM/` path as direct uploads. The form submits upload UUIDs as hidden inputs instead of raw
   files. Orphaned sessions are cleaned up daily at 03:00. Config in `config/klog.php` under `uploads` key.
   Traditional multipart upload still works as fallback (no-JS).
+- **Server-side media optimization** — HEIC/HEIF/AVIF images are converted to JPEG and MOV/WebM videos
+  are re-encoded to H.264 MP4 via queued `OptimizeMedia` jobs. Requires PHP Imagick extension (with HEIC
+  delegates) and FFmpeg/FFprobe binaries. `MediaOptimizationService` handles conversion logic.
+  `MediaStorageService` dispatches the job after creating Media records. Media records track state via
+  `processing_status` column (ProcessingStatus enum: Pending, Processing, Complete, Failed). The memory
+  card UI shows placeholders for processing media and error messages for failures. Config in
+  `config/klog.php` under `media_optimization` key. Client-side image resize reads the same config values
+  via data attributes on the upload component.
 - **Error email notifications** — a custom Monolog log channel (`email`) in the default logging stack sends
   error-level (and above) log entries to a maintainer via email. Recipient resolution: `MAINTAINER_EMAIL` env var
   → stored `app_settings` value → iterate users by ID until one succeeds (saved for future errors). Includes
@@ -83,7 +91,8 @@ php artisan 2fa:uninstall-authenticator      # Remove authenticator packages, mi
 ## Data Model
 
 - **Memory** — core entity; has title (nullable), content (nullable), captured_at
-- **Media** — polymorphic attachment (image/video/audio) with type enum, JSON metadata, ordering
+- **Media** — polymorphic attachment (image/video/audio) with type enum, JSON metadata, ordering,
+  processing_status (ProcessingStatus enum)
 - **WebClipping** — URL snapshot belonging to a Memory; has title (nullable), content (nullable, minimal HTML),
   fetch_attempts, screenshot_attempts (both track retry counts, max 14)
 - **Tag** — unique name + auto-generated slug, many-to-many with Memory via `memory_tag` pivot
@@ -105,6 +114,7 @@ php artisan 2fa:uninstall-authenticator      # Remove authenticator packages, mi
 - `MediaType` — image, video, audio
 - `MimeType` — JPEG, PNG, GIF, WEBP, HEIC, HEIF, AVIF, MOV, MP4, WEBM_VIDEO, MPEG, WAV, M4A, WEBM_AUDIO
 - `TwoFactorMethod` — EMAIL, AUTHENTICATOR
+- `ProcessingStatus` — Pending, Processing, Complete, Failed
 
 ## Coding Conventions
 
@@ -113,7 +123,7 @@ php artisan 2fa:uninstall-authenticator      # Remove authenticator packages, mi
 - Models: PascalCase singular (`Memory`, `WebClipping`)
 - Tables: snake_case plural (`memories`, `web_clippings`, `memory_tag`)
 - Columns: snake_case (`captured_at`, `original_filename`, `mime_type`)
-- Factories with modifier methods (e.g., `MediaFactory->image()`, `->video()`, `->audio()`)
+- Factories with modifier methods (e.g., `MediaFactory->image()`, `->video()`, `->audio()`, `->heic()`, `->mov()`, `->processing()`, `->failed()`)
 - Pest BDD-style tests with `describe`/`it` blocks and `expect()` fluent assertions
 - Commit messages: imperative mood, short descriptive titles
 
@@ -128,14 +138,15 @@ php artisan 2fa:uninstall-authenticator      # Remove authenticator packages, mi
 
 ```
 app/Console/Commands/ — Artisan commands (user:create, user:reset-password, media:migrate-to-private, clippings:*, 2fa:*)
-app/Enums/            — PHP enums (MemoryType, MediaType, MimeType, TwoFactorMethod)
+app/Enums/            — PHP enums (MemoryType, MediaType, MimeType, TwoFactorMethod, ProcessingStatus)
 app/Http/Controllers/ — Controllers (Auth/LoginController, Auth/TwoFactorChallengeController, TwoFactorSettingsController, MediaController, UploadController)
 app/Http/Middleware/  — Custom middleware (EnsureTwoFactorChallenge)
 app/Http/Requests/    — Form request validation (Auth/LoginRequest, Auth/TwoFactorChallengeRequest, InitUploadRequest, StoreChunkRequest)
 app/Models/           — Eloquent models
 app/Logging/          — Custom Monolog handlers (EmailLogHandler)
 app/Mail/             — Mailable classes (ErrorOccurred, TwoFactorCodeMail)
-app/Services/         — Business logic (MediaStorageService, MaintainerResolverService, ScreenshotService, TwoFactorService, AuthenticatorService, WebClippingContentService, HtmlSanitizer)
+app/Jobs/             — Queued jobs (OptimizeMedia)
+app/Services/         — Business logic (MediaStorageService, MediaOptimizationService, MaintainerResolverService, ScreenshotService, TwoFactorService, AuthenticatorService, WebClippingContentService, HtmlSanitizer)
 database/migrations/  — Schema definitions
 database/factories/   — Test data factories
 database/seeders/     — Database seeders

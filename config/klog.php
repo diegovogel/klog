@@ -55,6 +55,26 @@ return [
         'session_ttl' => (int) env('UPLOAD_SESSION_TTL', 24),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Media Optimization
+    |--------------------------------------------------------------------------
+    |
+    | Server-side media optimization settings. HEIC/HEIF/AVIF images are
+    | converted to JPEG. MOV/WebM videos are re-encoded to H.264 MP4.
+    | These run as queued jobs after upload.
+    |
+    */
+
+    'media_optimization' => [
+        'image_max_dimension' => (int) env('IMAGE_MAX_DIMENSION', 2048),
+        'image_quality' => (int) env('IMAGE_QUALITY', 85),
+        'video_max_dimension' => (int) env('VIDEO_MAX_DIMENSION', 2048),
+        'video_crf' => (int) env('VIDEO_CRF', 23),
+        'ffmpeg_path' => env('FFMPEG_PATH', 'ffmpeg'),
+        'ffprobe_path' => env('FFPROBE_PATH', 'ffprobe'),
+    ],
+
     'two_factor' => [
         'email_code_ttl' => 10,
         'remember_days' => (int) env('TWO_FACTOR_REMEMBER_DAYS', 30),

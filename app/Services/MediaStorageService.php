@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Enums\MediaType;
 use App\Enums\MimeType;
+use App\Enums\ProcessingStatus;
+use App\Jobs\OptimizeMedia;
 use App\Models\Media;
 use App\Models\Memory;
 use App\Models\UploadSession;
@@ -104,7 +106,7 @@ class MediaStorageService
 
             $filename = pathinfo($session->path, PATHINFO_FILENAME);
 
-            $mediaRecords[] = $memory->media()->create([
+            $media = $memory->media()->create([
                 'filename' => $filename,
                 'original_filename' => $session->original_filename,
                 'mime_type' => $session->mime_type,
@@ -115,6 +117,9 @@ class MediaStorageService
                 'metadata' => null,
                 'order' => $order,
             ]);
+
+            $this->dispatchOptimizationIfNeeded($media);
+            $mediaRecords[] = $media;
         }
 
         return $mediaRecords;
@@ -134,7 +139,7 @@ class MediaStorageService
 
         $mimeType = $this->resolveMimeType($file);
 
-        return $memory->media()->create([
+        $media = $memory->media()->create([
             'filename' => $uuid,
             'original_filename' => $file->getClientOriginalName(),
             'mime_type' => $mimeType,
@@ -145,5 +150,19 @@ class MediaStorageService
             'metadata' => null,
             'order' => $order,
         ]);
+
+        $this->dispatchOptimizationIfNeeded($media);
+
+        return $media;
+    }
+
+    private function dispatchOptimizationIfNeeded(Media $media): void
+    {
+        $service = app(MediaOptimizationService::class);
+
+        if ($service->needsOptimization($media)) {
+            $media->update(['processing_status' => ProcessingStatus::Pending]);
+            OptimizeMedia::dispatch($media->id);
+        }
     }
 }

@@ -40,6 +40,8 @@ document.querySelectorAll('[data-media-upload]').forEach(upload => {
     const cancelUrlTemplate = upload.dataset.uploadCancelUrl
     const chunkedEnabled = initUrl && chunkUrlTemplate && cancelUrlTemplate
     const maxFileSize = parseInt(upload.dataset.uploadMaxFileSize, 10) || DEFAULT_MAX_FILE_SIZE
+    const imageMaxDimension = parseInt(upload.dataset.imageMaxDimension, 10) || 2048
+    const imageQuality = parseInt(upload.dataset.imageQuality, 10) / 100 || 0.85
 
     /**
      * Per-file state entries.
@@ -149,7 +151,10 @@ document.querySelectorAll('[data-media-upload]').forEach(upload => {
             }
 
             try {
-                entry.file = await resizeImage(entry.file)
+                entry.file = await resizeImage(entry.file, {
+                    maxDimension: imageMaxDimension,
+                    quality: imageQuality,
+                })
             } catch {
                 // Resize failed — use original file
             }
