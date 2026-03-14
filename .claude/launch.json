@@ -16,7 +16,7 @@
     {
       "name": "queue",
       "runtimeExecutable": "php",
-      "runtimeArgs": ["artisan", "queue:listen", "--tries=2", "--timeout=660"]
+      "runtimeArgs": ["artisan", "queue:listen", "--tries=2", "--timeout=1260"]
     }
   ]
 }

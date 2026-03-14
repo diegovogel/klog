@@ -13,7 +13,7 @@ class OptimizeMedia implements ShouldQueue
 {
     use Queueable;
 
-    public int $timeout = 600;
+    public int $timeout = 1200;
 
     public int $tries = 2;
 
