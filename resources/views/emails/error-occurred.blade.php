@@ -5,9 +5,10 @@
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
 <p style="background: #fef3c7; border: 1px solid #f59e0b; padding: 12px; border-radius: 4px; font-size: 13px;">
-    <strong>If you are not the owner of {{ config('app.name', 'Klog') }} ({{config('app.url')}}, please forward this
-        message to them.</strong><br>
-    <em>Tip: a recipient for error messages can be specified in <code>.env</code>, please see the README for more info.</em>
+    <strong>If you are not the owner of {{ config('app.name', 'Klog') }} ({{ config('app.url') }}), please forward this
+        to
+        them.</strong><br>
+    <em>Tip: a recipient for errors can be specified in <code>.env</code>, please see the README for more info.</em>
 </p>
 
 <h2 style="color: #dc2626;">{{ $errorLevel }} in {{ config('app.name', 'Klog') }}</h2>
