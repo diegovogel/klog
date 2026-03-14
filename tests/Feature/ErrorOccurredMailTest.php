@@ -72,7 +72,7 @@ describe('ErrorOccurred mailable', function () {
 
         expect($html)
             ->toContain('If you are not the owner of MyKlog')
-            ->toContain('please forward this message to them')
-            ->toContain('A recipient for error messages can be specified');
+            ->toContain('please forward this')
+            ->toContain('a recipient for errors can be specified');
     });
 });

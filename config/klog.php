@@ -69,9 +69,9 @@ return [
     'media_optimization' => [
         'image_max_dimension' => (int) env('IMAGE_MAX_DIMENSION', 2048),
         'image_quality' => (int) env('IMAGE_QUALITY', 85),
-        'video_max_dimension' => (int) env('VIDEO_MAX_DIMENSION', 2048),
+        'video_max_dimension' => (int) env('VIDEO_MAX_DIMENSION', 1080),
         'video_crf' => (int) env('VIDEO_CRF', 23),
-        'video_preset' => env('VIDEO_PRESET', 'medium'),
+        'video_preset' => env('VIDEO_PRESET', 'ultrafast'),
         'ffmpeg_path' => env('FFMPEG_PATH', 'ffmpeg'),
         'ffprobe_path' => env('FFPROBE_PATH', 'ffprobe'),
     ],
