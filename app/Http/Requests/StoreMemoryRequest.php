@@ -41,7 +41,21 @@ class StoreMemoryRequest extends FormRequest
                 'mimetypes:'.implode(',', MimeType::values()),
                 'max:102400',
             ],
+            'uploads' => ['nullable', 'array', 'max:20'],
+            'uploads.*' => ['required', 'uuid'],
         ];
+    }
+
+    public function withValidator(\Illuminate\Validation\Validator $validator): void
+    {
+        $validator->after(function (\Illuminate\Validation\Validator $validator) {
+            $mediaCount = count($this->file('media', []));
+            $uploadCount = count($this->input('uploads', []));
+
+            if ($mediaCount + $uploadCount > 20) {
+                $validator->errors()->add('media', 'You may upload a maximum of 20 files.');
+            }
+        });
     }
 
     /**

@@ -6,6 +6,7 @@ use App\Enums\MediaType;
 use App\Enums\MimeType;
 use App\Models\Media;
 use App\Models\Memory;
+use App\Models\UploadSession;
 use App\Models\WebClipping;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -83,6 +84,40 @@ class MediaStorageService
             'metadata' => null,
             'order' => 0,
         ]);
+    }
+
+    /**
+     * Attach completed upload sessions as Media to the given Memory.
+     *
+     * @param  array<int, string>  $uploadIds
+     * @return array<int, Media>
+     */
+    public function attachUploadSessions(Memory $memory, array $uploadIds): array
+    {
+        $mediaRecords = [];
+
+        foreach ($uploadIds as $order => $uploadId) {
+            $session = UploadSession::where('id', $uploadId)
+                ->where('user_id', auth()->id())
+                ->whereNotNull('completed_at')
+                ->firstOrFail();
+
+            $filename = pathinfo($session->path, PATHINFO_FILENAME);
+
+            $mediaRecords[] = $memory->media()->create([
+                'filename' => $filename,
+                'original_filename' => $session->original_filename,
+                'mime_type' => $session->mime_type,
+                'size' => $session->total_size,
+                'disk' => $session->disk,
+                'path' => $session->path,
+                'type' => MimeType::mediaTypeFromMime($session->mime_type),
+                'metadata' => null,
+                'order' => $order,
+            ]);
+        }
+
+        return $mediaRecords;
     }
 
     private function storeFile(Memory $memory, UploadedFile $file, int $order): Media

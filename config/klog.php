@@ -37,6 +37,24 @@ return [
         'no_sandbox' => (bool) env('SCREENSHOTS_NO_SANDBOX', true),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Uploads
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for chunked file uploads. chunk_size is in bytes (default
+    | 2 MB). max_file_size env var is in megabytes (default 500 MB).
+    | session_ttl is in hours — incomplete sessions older than this are
+    | cleaned up automatically.
+    |
+    */
+
+    'uploads' => [
+        'chunk_size' => (int) env('UPLOAD_CHUNK_SIZE', 2 * 1024 * 1024),
+        'max_file_size' => (int) env('UPLOAD_MAX_FILE_SIZE', 500) * 1024 * 1024,
+        'session_ttl' => (int) env('UPLOAD_SESSION_TTL', 24),
+    ],
+
     'two_factor' => [
         'email_code_ttl' => 10,
         'remember_days' => (int) env('TWO_FACTOR_REMEMBER_DAYS', 30),

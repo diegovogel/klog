@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TwoFactorSettingsController;
+use App\Http\Controllers\UploadController;
 use App\Http\Requests\StoreMemoryRequest;
 use App\Models\Memory;
 use App\Services\HtmlSanitizer;
@@ -64,6 +65,10 @@ Route::middleware('auth')->group(function () {
     Route::middleware('two-factor')->group(function () {
         Route::get('media/{filename}', [MediaController::class, 'show'])->name('media.show');
 
+        Route::post('uploads/init', [UploadController::class, 'init'])->name('uploads.init');
+        Route::post('uploads/{uploadSession}/chunk', [UploadController::class, 'chunk'])->name('uploads.chunk');
+        Route::delete('uploads/{uploadSession}', [UploadController::class, 'cancel'])->name('uploads.cancel');
+
         Route::get('/', function () {
             return view('memory-feed', [
                 'memories' => Memory::latest('memory_date')->paginate(10),
@@ -84,6 +89,10 @@ Route::middleware('auth')->group(function () {
                 'content' => $sanitizer->sanitize($request->validated('content')),
                 'memory_date' => $request->validated('memory_date'),
             ]);
+
+            if ($request->has('uploads')) {
+                $mediaStorage->attachUploadSessions($memory, $request->validated('uploads'));
+            }
 
             if ($request->hasFile('media')) {
                 $mediaStorage->storeForMemory($memory, $request->file('media'));

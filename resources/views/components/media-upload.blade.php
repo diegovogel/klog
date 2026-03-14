@@ -2,7 +2,13 @@
 
 <div class="form-group">
     <label class="form-label">{{ $label }}</label>
-    <div data-media-upload data-max="{{ $max }}" class="media-upload">
+    <div data-media-upload
+         data-max="{{ $max }}"
+         data-upload-max-file-size="{{ config('klog.uploads.max_file_size', 500 * 1024 * 1024) }}"
+         data-upload-init-url="{{ route('uploads.init') }}"
+         data-upload-chunk-url="{{ route('uploads.chunk', ['uploadSession' => '__ID__']) }}"
+         data-upload-cancel-url="{{ route('uploads.cancel', ['uploadSession' => '__ID__']) }}"
+         class="media-upload">
         <div data-media-upload-preview class="media-upload__preview"></div>
 
         <label class="media-upload__dropzone" data-media-upload-dropzone>

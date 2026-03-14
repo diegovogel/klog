@@ -93,3 +93,98 @@
     font-size: 0.8125rem;
     color: var(--klog-text-muted);
 }
+
+/* Per-file upload progress bar */
+
+.media-upload__progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--klog-border-light);
+}
+
+.media-upload__progress-fill {
+    height: 100%;
+    background: var(--klog-primary);
+    transition: width 0.2s ease;
+}
+
+.media-upload__progress {
+    display: none;
+}
+
+.media-upload__item.is-uploading .media-upload__progress,
+.media-upload__item.is-uploaded .media-upload__progress,
+.media-upload__item.is-error .media-upload__progress {
+    display: block;
+}
+
+.media-upload__item.is-uploading {
+    opacity: 0.75;
+}
+
+.media-upload__item.is-uploaded .media-upload__progress-fill {
+    background: var(--klog-success);
+}
+
+.media-upload__item.is-error .media-upload__progress-fill {
+    background: var(--klog-danger);
+    width: 100% !important;
+}
+
+.media-upload__info--error {
+    color: var(--klog-danger);
+    white-space: normal;
+    line-height: 1.2;
+}
+
+/* Full-page upload overlay */
+
+.media-upload-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(250, 249, 247, 0.92);
+    backdrop-filter: blur(4px);
+}
+
+.media-upload-overlay__content {
+    width: min(24rem, 90vw);
+    text-align: center;
+}
+
+.media-upload-overlay__text {
+    font-size: 1.125rem;
+    color: var(--klog-text);
+    margin-block-end: var(--klog-space-md);
+}
+
+.media-upload-overlay__bar {
+    width: 100%;
+    height: 0.5rem;
+    border-radius: var(--klog-radius);
+    appearance: none;
+    border: none;
+    background: var(--klog-border-light);
+}
+
+.media-upload-overlay__bar::-webkit-progress-bar {
+    background: var(--klog-border-light);
+    border-radius: var(--klog-radius);
+}
+
+.media-upload-overlay__bar::-webkit-progress-value {
+    background: var(--klog-primary);
+    border-radius: var(--klog-radius);
+    transition: width 0.3s ease;
+}
+
+.media-upload-overlay__bar::-moz-progress-bar {
+    background: var(--klog-primary);
+    border-radius: var(--klog-radius);
+}

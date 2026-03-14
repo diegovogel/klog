@@ -67,6 +67,13 @@ php artisan 2fa:uninstall-authenticator      # Remove authenticator packages, mi
   `AuthenticatorService::isAvailable()` uses `class_exists()` guard. The settings UI conditionally shows the
   authenticator option. Uninstalling via `php artisan 2fa:uninstall-authenticator` gracefully migrates confirmed
   authenticator users to email method (no lockouts), clears unconfirmed setups, then removes packages.
+- **Chunked uploads with client-side image resize** — media files are uploaded via a chunked AJAX pipeline
+  to bypass Cloudflare's 100MB per-request limit. Images are resized client-side (Canvas API, max 2048px,
+  JPEG 0.85) before upload. Files start uploading eagerly on add (not on form submit) for parallel processing
+  while the user composes the memory. `UploadSession` model tracks chunk progress; assembled files go to the
+  same `uploads/YYYY/MM/` path as direct uploads. The form submits upload UUIDs as hidden inputs instead of raw
+  files. Orphaned sessions are cleaned up daily at 03:00. Config in `config/klog.php` under `uploads` key.
+  Traditional multipart upload still works as fallback (no-JS).
 - **Error email notifications** — a custom Monolog log channel (`email`) in the default logging stack sends
   error-level (and above) log entries to a maintainer via email. Recipient resolution: `MAINTAINER_EMAIL` env var
   → stored `app_settings` value → iterate users by ID until one succeeds (saved for future errors). Includes
@@ -80,6 +87,8 @@ php artisan 2fa:uninstall-authenticator      # Remove authenticator packages, mi
 - **WebClipping** — URL snapshot belonging to a Memory; has title (nullable), content (nullable, minimal HTML),
   fetch_attempts, screenshot_attempts (both track retry counts, max 14)
 - **Tag** — unique name + auto-generated slug, many-to-many with Memory via `memory_tag` pivot
+- **UploadSession** — tracks chunked upload progress; UUID primary key, belongs to User, stores chunk
+  indices and assembled file path on completion
 - **AppSetting** — key-value store for application settings (e.g., discovered `maintainer_email`)
 - **User** — standard Laravel auth; optional 2FA columns: `two_factor_method` (enum), `two_factor_secret`
   (encrypted), `two_factor_recovery_codes` (encrypted array), `two_factor_confirmed_at`, `two_factor_remember_token`
@@ -120,9 +129,9 @@ php artisan 2fa:uninstall-authenticator      # Remove authenticator packages, mi
 ```
 app/Console/Commands/ — Artisan commands (user:create, user:reset-password, media:migrate-to-private, clippings:*, 2fa:*)
 app/Enums/            — PHP enums (MemoryType, MediaType, MimeType, TwoFactorMethod)
-app/Http/Controllers/ — Controllers (Auth/LoginController, Auth/TwoFactorChallengeController, TwoFactorSettingsController, MediaController)
+app/Http/Controllers/ — Controllers (Auth/LoginController, Auth/TwoFactorChallengeController, TwoFactorSettingsController, MediaController, UploadController)
 app/Http/Middleware/  — Custom middleware (EnsureTwoFactorChallenge)
-app/Http/Requests/    — Form request validation (Auth/LoginRequest, Auth/TwoFactorChallengeRequest)
+app/Http/Requests/    — Form request validation (Auth/LoginRequest, Auth/TwoFactorChallengeRequest, InitUploadRequest, StoreChunkRequest)
 app/Models/           — Eloquent models
 app/Logging/          — Custom Monolog handlers (EmailLogHandler)
 app/Mail/             — Mailable classes (ErrorOccurred, TwoFactorCodeMail)
@@ -132,7 +141,7 @@ database/factories/   — Test data factories
 database/seeders/     — Database seeders
 resources/views/      — Blade templates (auth/login)
 resources/css/        — CSS entry point
-resources/js/         — Minimal vanilla JS
+resources/js/         — Minimal vanilla JS (components/, lib/)
 tests/Feature/        — Feature/integration tests
 tests/Unit/           — Unit tests
 ```
