@@ -140,6 +140,10 @@ FFMPEG_PATH=/usr/local/bin/ffmpeg
 FFPROBE_PATH=/usr/local/bin/ffprobe
 ```
 
+A **queue worker** must be running for media optimization to process. In development, `composer dev`
+starts one automatically. In production, configure a queue worker via your hosting platform (e.g.,
+Laravel Forge) or a process manager like Supervisor.
+
 ### Health Check
 
 Laravel's built-in `/up` health check endpoint is disabled by default. If you use an uptime monitor or load balancer
