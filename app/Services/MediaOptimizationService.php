@@ -98,11 +98,12 @@ class MediaOptimizationService
         $outputPath = $disk->path($newPath);
 
         $crf = config('klog.media_optimization.video_crf', 23);
+        $preset = config('klog.media_optimization.video_preset', 'veryfast');
         $ffmpeg = config('klog.media_optimization.ffmpeg_path', 'ffmpeg');
 
         $command = [
             $ffmpeg, '-i', $inputPath,
-            '-c:v', 'libx264', '-crf', (string) $crf, '-preset', 'medium',
+            '-c:v', 'libx264', '-crf', (string) $crf, '-preset', $preset,
             '-c:a', 'aac', '-b:a', '128k',
             '-movflags', '+faststart',
         ];
