@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CancelUploadRequest;
 use App\Http\Requests\InitUploadRequest;
 use App\Http\Requests\StoreChunkRequest;
 use App\Models\UploadSession;
@@ -16,7 +17,6 @@ class UploadController extends Controller
     public function init(InitUploadRequest $request): JsonResponse
     {
         $session = UploadSession::create([
-            'id' => Str::uuid()->toString(),
             'user_id' => $request->user()->id,
             'original_filename' => $request->validated('original_filename'),
             'mime_type' => $request->validated('mime_type'),
@@ -36,7 +36,6 @@ class UploadController extends Controller
         }
 
         $chunkIndex = $request->validated('chunk_index');
-        $chunkPath = $uploadSession->chunksDirectory().$chunkIndex.'.part';
 
         Storage::disk(self::DISK)->putFileAs(
             $uploadSession->chunksDirectory(),
@@ -68,12 +67,8 @@ class UploadController extends Controller
         ]);
     }
 
-    public function cancel(UploadSession $uploadSession): JsonResponse
+    public function cancel(CancelUploadRequest $request, UploadSession $uploadSession): JsonResponse
     {
-        if ($uploadSession->user_id !== auth()->id()) {
-            abort(403);
-        }
-
         Storage::disk(self::DISK)->deleteDirectory($uploadSession->chunksDirectory());
 
         if ($uploadSession->path) {
@@ -109,6 +104,12 @@ class UploadController extends Controller
         }
 
         fclose($outputStream);
+
+        $actualSize = filesize($outputPath);
+        if ($actualSize !== $session->total_size) {
+            unlink($outputPath);
+            throw new \RuntimeException("Assembled file size mismatch: expected {$session->total_size}, got {$actualSize}");
+        }
 
         $disk->deleteDirectory($session->chunksDirectory());
 

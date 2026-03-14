@@ -19,7 +19,7 @@ class StoreChunkRequest extends FormRequest
         $maxIndex = $this->route('uploadSession')->total_chunks - 1;
 
         return [
-            'chunk' => ['required', 'file', 'max:5120'],
+            'chunk' => ['required', 'file', 'max:'.(int) (config('klog.uploads.chunk_size', 2 * 1024 * 1024) / 1024)],
             'chunk_index' => ['required', 'integer', 'min:0', 'max:'.$maxIndex],
         ];
     }

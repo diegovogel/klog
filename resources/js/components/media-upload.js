@@ -248,21 +248,23 @@ document.querySelectorAll('[data-media-upload]').forEach(upload => {
         }
     }
 
-    function waitForUploads () {
+    function waitForUploads (timeoutMs = 5 * 60 * 1000) {
         return new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                clearInterval(check)
+                reject(new Error('Upload timed out'))
+            }, timeoutMs)
+
             const check = setInterval(() => {
                 updateFullPageProgress()
 
-                // Ignore errored entries — they won't be submitted
                 const active = entries.filter(en => en.status !== 'error')
                 const allDone = active.length === 0 || active.every(en => en.status === 'uploaded')
                 if (allDone) {
+                    clearTimeout(timeout)
                     clearInterval(check)
                     resolve()
-                    return
                 }
-
-                // If all remaining non-error entries are stuck, keep waiting
             }, 100)
         })
     }

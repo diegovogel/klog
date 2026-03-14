@@ -153,16 +153,19 @@ describe('chunked upload', function () {
         it('assembles the file when all chunks are received', function () {
             Storage::fake('local');
             $user = User::factory()->create();
+
+            $chunk1Content = str_repeat('A', 1000);
+            $chunk2Content = str_repeat('B', 1000);
+            $chunk1 = UploadedFile::fake()->createWithContent('chunk.bin', $chunk1Content);
+            $chunk2 = UploadedFile::fake()->createWithContent('chunk.bin', $chunk2Content);
+
             $session = UploadSession::create([
                 'user_id' => $user->id,
                 'original_filename' => 'photo.jpg',
                 'mime_type' => 'image/jpeg',
-                'total_size' => 2000,
+                'total_size' => strlen($chunk1Content) + strlen($chunk2Content),
                 'total_chunks' => 2,
             ]);
-
-            $chunk1 = UploadedFile::fake()->create('chunk.bin', 1);
-            $chunk2 = UploadedFile::fake()->create('chunk.bin', 1);
 
             $this->actingAs($user)
                 ->postJson(route('uploads.chunk', $session), [
