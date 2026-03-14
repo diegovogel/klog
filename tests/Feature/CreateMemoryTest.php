@@ -3,6 +3,7 @@
 use App\Models\Memory;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
 describe('create memory', function () {
@@ -372,6 +373,7 @@ describe('create memory', function () {
     });
 
     it('stores a captured WebM video', function () {
+        Queue::fake();
         Storage::fake('local');
         $user = User::factory()->create();
 

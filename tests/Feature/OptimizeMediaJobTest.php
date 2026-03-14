@@ -15,8 +15,9 @@ describe('OptimizeMedia job', function () {
     it('skips processing when media does not exist', function () {
         $job = new OptimizeMedia(999999);
 
-        // Should not throw
         $job->handle(app(\App\Services\MediaOptimizationService::class));
+
+        expect(Media::find(999999))->toBeNull();
     });
 
     it('skips processing when media is already complete', function () {
@@ -31,7 +32,7 @@ describe('OptimizeMedia job', function () {
         expect($media->processing_status)->toBe(ProcessingStatus::Complete);
     });
 
-    it('sets status to failed on conversion error', function () {
+    it('rethrows exceptions to allow queue retries', function () {
         $media = Media::factory()->heic()->create([
             'processing_status' => ProcessingStatus::Pending,
         ]);
@@ -41,7 +42,20 @@ describe('OptimizeMedia job', function () {
         $service->shouldReceive('convertImage')->andThrow(new RuntimeException('Imagick not available'));
 
         $job = new OptimizeMedia($media->id);
-        $job->handle($service);
+
+        expect(fn () => $job->handle($service))->toThrow(RuntimeException::class);
+
+        $media->refresh();
+        expect($media->processing_status)->toBe(ProcessingStatus::Processing);
+    });
+
+    it('sets status to failed via failed() after all retries exhausted', function () {
+        $media = Media::factory()->heic()->create([
+            'processing_status' => ProcessingStatus::Processing,
+        ]);
+
+        $job = new OptimizeMedia($media->id);
+        $job->failed(new RuntimeException('Imagick not available'));
 
         $media->refresh();
         expect($media->processing_status)->toBe(ProcessingStatus::Failed);

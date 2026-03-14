@@ -42,13 +42,20 @@ class OptimizeMedia implements ShouldQueue
                 $media->update(['processing_status' => ProcessingStatus::Complete]);
             }
         } catch (\Throwable $e) {
-            $media->update(['processing_status' => ProcessingStatus::Failed]);
-
             Log::error("Media optimization failed for Media #{$media->id}", [
                 'error' => $e->getMessage(),
                 'path' => $media->path,
                 'mime_type' => $media->mime_type,
             ]);
+
+            throw $e;
         }
+    }
+
+    public function failed(?\Throwable $exception): void
+    {
+        $media = Media::find($this->mediaId);
+
+        $media?->update(['processing_status' => ProcessingStatus::Failed]);
     }
 }
