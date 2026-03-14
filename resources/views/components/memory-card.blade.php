@@ -57,7 +57,13 @@
     @if($images->count())
         <div class="memory-card__images">
             @foreach($images as $image)
-                <img src="{{$image->url}}">
+                @if($image->isProcessing())
+                    <div class="memory-card__media-processing">Processing image…</div>
+                @elseif($image->isOptimizationFailed())
+                    <div class="memory-card__media-failed">Image processing failed</div>
+                @else
+                    <img src="{{$image->url}}">
+                @endif
             @endforeach
         </div>
     @endif
@@ -65,9 +71,15 @@
     @if($videos->count())
         <div class="memory-card__videos">
             @foreach($videos as $video)
-                <video src="{{$video->url}}"
-                       controls>Your browser does not support the audio element.
-                </video>
+                @if($video->isProcessing())
+                    <div class="memory-card__media-processing">Processing video…</div>
+                @elseif($video->isOptimizationFailed())
+                    <div class="memory-card__media-failed">Video processing failed</div>
+                @else
+                    <video src="{{$video->url}}"
+                           controls>Your browser does not support the video element.
+                    </video>
+                @endif
             @endforeach
         </div>
     @endif

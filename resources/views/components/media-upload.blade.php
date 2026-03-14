@@ -5,6 +5,8 @@
     <div data-media-upload
          data-max="{{ $max }}"
          data-upload-max-file-size="{{ config('klog.uploads.max_file_size', 500 * 1024 * 1024) }}"
+         data-image-max-dimension="{{ config('klog.media_optimization.image_max_dimension', 2048) }}"
+         data-image-quality="{{ config('klog.media_optimization.image_quality', 85) }}"
          data-upload-init-url="{{ route('uploads.init') }}"
          data-upload-chunk-url="{{ route('uploads.chunk', ['uploadSession' => '__ID__']) }}"
          data-upload-cancel-url="{{ route('uploads.cancel', ['uploadSession' => '__ID__']) }}"

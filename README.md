@@ -102,6 +102,44 @@ php artisan clippings:uninstall-screenshots
 
 This removes the dependencies, which automatically deactivates the scheduled task.
 
+### Media Optimization
+
+Uploaded media is automatically optimized server-side via queued jobs:
+
+- **HEIC/HEIF/AVIF images** are converted to JPEG (max 2048px, 85% quality) for universal browser
+  compatibility. Images are also resized client-side before upload, but HEIC/HEIF/AVIF are skipped
+  client-side because Canvas can't decode them.
+- **MOV/WebM videos** are re-encoded to H.264 MP4 (max 2048px, CRF 23) for universal playback and
+  better compression.
+
+This requires two system dependencies:
+
+- **PHP Imagick extension** with HEIC/HEIF delegates (libheif, libde265)
+- **FFmpeg** and **FFprobe** binaries
+
+```bash
+# macOS (Homebrew)
+brew install imagemagick libheif ffmpeg
+pecl install imagick
+
+# Ubuntu/Debian
+sudo apt install imagemagick libmagickwand-dev libheif-dev ffmpeg
+pecl install imagick
+```
+
+Verify Imagick HEIC support:
+
+```bash
+php -r "echo in_array('HEIC', Imagick::queryFormats()) ? 'OK' : 'Missing HEIC support';"
+```
+
+The FFmpeg and FFprobe paths can be customized via environment variables if they aren't on your PATH:
+
+```env
+FFMPEG_PATH=/usr/local/bin/ffmpeg
+FFPROBE_PATH=/usr/local/bin/ffprobe
+```
+
 ### Health Check
 
 Laravel's built-in `/up` health check endpoint is disabled by default. If you use an uptime monitor or load balancer
