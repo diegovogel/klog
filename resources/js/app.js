@@ -7,6 +7,7 @@ import './components/memory-date-warning'
 import './components/web-clippings'
 import './components/child-selector'
 import './components/confirm-delete'
+import './components/submit-loading'
 
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {})
