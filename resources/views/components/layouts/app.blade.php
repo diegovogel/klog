@@ -1,11 +1,12 @@
 <!doctype html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="light">
 <head>
     <meta charset="utf-8">
     <meta name="viewport"
           content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>{{$title}}</title>
 
+    <meta name="color-scheme" content="light">
     <meta name="theme-color" content="#b45a35">
     <link rel="manifest" href="/manifest.webmanifest">
     <meta name="apple-mobile-web-app-capable" content="yes">
