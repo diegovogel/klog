@@ -22,6 +22,18 @@ class Child extends Model
 
     public static function findOrCreateByName(string $name): self
     {
-        return static::firstOrCreate(['name' => trim($name)]);
+        $name = trim($name);
+
+        $child = static::withTrashed()->where('name', $name)->first();
+
+        if ($child) {
+            if ($child->trashed()) {
+                $child->restore();
+            }
+
+            return $child;
+        }
+
+        return static::create(['name' => $name]);
     }
 }

@@ -153,4 +153,41 @@ describe('child tagging', function () {
 
         $response->assertDontSee('memory-card__footer-pipe', false);
     });
+
+    it('restores a soft-deleted child when submitted as new_children', function () {
+        $user = User::factory()->create();
+        $child = Child::factory()->create(['name' => 'Emma']);
+        $child->delete();
+
+        $this->actingAs($user)
+            ->post(route('memories.store'), [
+                'title' => 'Restore test',
+                'memory_date' => '2026-02-15',
+                'new_children' => ['Emma'],
+            ])
+            ->assertRedirect('/');
+
+        expect(Child::count())->toBe(1);
+        expect(Child::first()->name)->toBe('Emma');
+        expect(Memory::first()->children)->toHaveCount(1);
+    });
+
+    it('preserves new_children after validation failure', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->from(route('memories.create'))
+            ->post(route('memories.store'), [
+                'title' => str_repeat('a', 256), // triggers validation error
+                'memory_date' => '2026-02-15',
+                'new_children' => ['Sophie', 'Noah'],
+            ])
+            ->assertRedirect(route('memories.create'))
+            ->assertSessionHasErrors('title');
+
+        $this->actingAs($user)
+            ->get(route('memories.create'))
+            ->assertSee('Sophie')
+            ->assertSee('Noah');
+    });
 });

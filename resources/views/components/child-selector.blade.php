@@ -16,6 +16,18 @@
                     {{ $child->name }}
                 </label>
             @endforeach
+            @foreach(old('new_children', []) as $newChild)
+                <label class="child-selector__btn child-selector__btn--active">
+                    <input
+                        type="checkbox"
+                        name="new_children[]"
+                        value="{{ $newChild }}"
+                        class="child-selector__checkbox"
+                        checked
+                    >
+                    {{ $newChild }}
+                </label>
+            @endforeach
         </div>
 
         <button type="button" data-child-selector-add class="child-selector__add-btn">+ Add New</button>

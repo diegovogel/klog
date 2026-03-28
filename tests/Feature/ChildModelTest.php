@@ -46,3 +46,16 @@ it('supports soft deletes', function () {
     expect(Child::count())->toBe(0)
         ->and(Child::withTrashed()->count())->toBe(1);
 });
+
+it('restores a soft-deleted child when finding or creating by name', function () {
+    $child = Child::factory()->create(['name' => 'Emma']);
+    $child->delete();
+
+    expect(Child::count())->toBe(0);
+
+    $restored = Child::findOrCreateByName('Emma');
+
+    expect($restored->id)->toBe($child->id)
+        ->and($restored->trashed())->toBeFalse()
+        ->and(Child::count())->toBe(1);
+});
