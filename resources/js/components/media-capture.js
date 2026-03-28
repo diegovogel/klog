@@ -238,6 +238,18 @@ document.querySelectorAll('[data-media-capture]').forEach(container => {
         return 'webm'
     }
 
+    /**
+     * Strip codec parameters from a MIME type string.
+     * e.g. "audio/mp4;codecs=mp4a.40.2" → "audio/mp4"
+     *
+     * iOS Safari's MediaRecorder reports MIME types with codec suffixes,
+     * which the server does not accept during upload validation.
+     */
+    function baseMimeType (mimeType) {
+        if (!mimeType) return mimeType
+        return mimeType.split(';')[0].trim()
+    }
+
     function startRecording () {
         const mimeType = pickRecorderMimeType(currentMode)
         chunks = []
@@ -274,7 +286,11 @@ document.querySelectorAll('[data-media-capture]').forEach(container => {
         // category (audio vs video) based on the capture mode. This
         // handles the WebM container issue where audio-only recordings
         // may be reported as video/webm.
-        const actualMime = recorder.mimeType
+        //
+        // Strip codec parameters (e.g. "audio/mp4;codecs=mp4a.40.2" → "audio/mp4")
+        // because the server validates against base MIME types only.
+        // iOS Safari's MediaRecorder includes these suffixes.
+        const actualMime = baseMimeType(recorder.mimeType)
         const ext = extForMime(actualMime)
         let mimeType
 

@@ -45,6 +45,22 @@ describe('chunked upload', function () {
                 ->assertJsonValidationErrors('mime_type');
         });
 
+        it('strips codec parameters from MIME types', function () {
+            $user = User::factory()->create();
+
+            $this->actingAs($user)
+                ->postJson(route('uploads.init'), [
+                    'original_filename' => 'recording.mp4',
+                    'mime_type' => 'audio/mp4;codecs=mp4a.40.2',
+                    'total_size' => 50000,
+                    'total_chunks' => 1,
+                ])
+                ->assertCreated();
+
+            $session = UploadSession::first();
+            expect($session->mime_type)->toBe('audio/mp4');
+        });
+
         it('rejects files exceeding the configured max size', function () {
             $user = User::factory()->create();
 
