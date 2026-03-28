@@ -94,6 +94,11 @@ class Memory extends Model
         return $this->belongsToMany(Tag::class)->withTimestamps();
     }
 
+    public function children(): BelongsToMany
+    {
+        return $this->belongsToMany(Child::class)->withTimestamps();
+    }
+
     // Sync tags from array of names
     public function syncTagNames(array $tagNames): void
     {

@@ -1,0 +1,105 @@
+.child-selector__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--klog-space-sm);
+}
+
+.child-selector__list:not(:empty) {
+    margin-block-end: var(--klog-space-sm);
+}
+
+.child-selector__checkbox {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 0;
+    height: 0;
+    margin: 0;
+}
+
+.child-selector__btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.875rem;
+    font-family: var(--klog-font-sans);
+    color: var(--klog-text-secondary);
+    background-color: var(--klog-bg-subtle);
+    border: 1px solid var(--klog-border);
+    border-radius: var(--klog-radius);
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    margin: 0;
+}
+
+.child-selector__btn:hover {
+    background-color: var(--klog-bg-card);
+    border-color: var(--klog-text-muted);
+}
+
+.child-selector__btn--active {
+    background-color: var(--klog-primary);
+    border-color: var(--klog-primary);
+    color: var(--klog-primary-text);
+}
+
+.child-selector__btn--active:hover {
+    background-color: var(--klog-primary-hover);
+    border-color: var(--klog-primary-hover);
+    color: var(--klog-primary-text);
+}
+
+.child-selector__add-btn {
+    width: auto;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.875rem;
+    font-family: var(--klog-font-sans);
+    color: var(--klog-text-secondary);
+    background-color: transparent;
+    border: 1px dashed var(--klog-border);
+    border-radius: var(--klog-radius);
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.child-selector__add-btn:hover {
+    border-color: var(--klog-text-muted);
+    color: var(--klog-text);
+}
+
+/* Dialog */
+.child-selector__dialog {
+    max-width: 320px;
+    width: 90vw;
+    border: 1px solid var(--klog-border);
+    border-radius: var(--klog-radius-lg);
+    padding: var(--klog-space-lg);
+    box-shadow: var(--klog-shadow-md);
+}
+
+.child-selector__dialog::backdrop {
+    background: rgba(44, 40, 37, 0.5);
+}
+
+.child-selector__dialog-form {
+    margin: 0;
+}
+
+.child-selector__dialog-form .form-input {
+    margin-block-end: var(--klog-space-md);
+}
+
+.child-selector__dialog-actions {
+    display: flex;
+    gap: var(--klog-space-sm);
+}
+
+/* Warning */
+.child-selector__warning {
+    font-size: 0.875rem;
+    color: var(--klog-accent);
+    font-weight: 500;
+    margin-block-end: 0;
+    padding: var(--klog-space-sm) 0;
+}

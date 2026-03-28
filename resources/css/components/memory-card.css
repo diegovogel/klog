@@ -121,9 +121,31 @@
     padding-block-start: var(--klog-space-md);
 }
 
+.memory-card__footer-left {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    min-width: 0;
+}
+
 .memory-card__footer time {
     font-size: 0.8125rem;
     color: var(--klog-text-muted);
+}
+
+.memory-card__footer-pipe {
+    font-size: 0.8125rem;
+    color: var(--klog-border);
+}
+
+.memory-card__child-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--klog-text-secondary);
+    background-color: var(--klog-bg-subtle);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
 }
 
 .memory-card__footer form {

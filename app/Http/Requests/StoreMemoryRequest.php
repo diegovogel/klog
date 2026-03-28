@@ -43,6 +43,10 @@ class StoreMemoryRequest extends FormRequest
             ],
             'uploads' => ['nullable', 'array', 'max:20'],
             'uploads.*' => ['required', 'uuid'],
+            'children' => ['nullable', 'array'],
+            'children.*' => ['required', 'integer', 'exists:children,id'],
+            'new_children' => ['nullable', 'array'],
+            'new_children.*' => ['required', 'string', 'max:100'],
         ];
     }
 
