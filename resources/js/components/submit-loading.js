@@ -15,4 +15,12 @@ if (form) {
         btn.disabled = true
         btn.insertAdjacentHTML('beforeend', '<span class="btn-spinner" aria-hidden="true"></span>')
     })
+
+    // Reset button when bfcache restores the page (e.g. browser back)
+    window.addEventListener('pageshow', e => {
+        if (e.persisted) {
+            btn.disabled = false
+            btn.querySelector('.btn-spinner')?.remove()
+        }
+    })
 }
