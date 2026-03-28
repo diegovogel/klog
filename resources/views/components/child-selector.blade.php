@@ -21,7 +21,7 @@
         <button type="button" data-child-selector-add class="child-selector__add-btn">+ Add New</button>
 
         <dialog data-child-selector-dialog class="child-selector__dialog">
-            <form method="dialog" class="child-selector__dialog-form">
+            <div class="child-selector__dialog-form">
                 <label for="new-child-name" class="form-label">Name</label>
                 <input
                     id="new-child-name"
@@ -29,13 +29,12 @@
                     data-child-selector-name
                     class="form-input"
                     maxlength="100"
-                    required
                 >
                 <div class="child-selector__dialog-actions">
-                    <button type="submit" class="btn btn--primary btn--sm" data-child-selector-confirm>Add</button>
+                    <button type="button" class="btn btn--primary btn--sm" data-child-selector-confirm>Add</button>
                     <button type="button" class="btn btn--sm" data-child-selector-cancel>Cancel</button>
                 </div>
-            </form>
+            </div>
         </dialog>
     </div>
     @error('children')

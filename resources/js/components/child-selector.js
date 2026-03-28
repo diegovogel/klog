@@ -44,9 +44,21 @@ document.querySelectorAll('[data-child-selector]').forEach(container => {
         cancelBtn.addEventListener('click', () => dialog.close())
     }
 
-    // Handle dialog form submit (the "Add" button)
-    dialog.querySelector('.child-selector__dialog-form').addEventListener('submit', e => {
-        e.preventDefault()
+    // Handle confirm button click
+    const confirmBtn = container.querySelector('[data-child-selector-confirm]')
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', () => addChildFromDialog())
+    }
+
+    // Allow Enter key in the name input
+    nameInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            e.preventDefault()
+            addChildFromDialog()
+        }
+    })
+
+    function addChildFromDialog () {
         const name = nameInput.value.trim()
         if (!name) return
 
@@ -84,7 +96,7 @@ document.querySelectorAll('[data-child-selector]').forEach(container => {
 
         dialog.close()
         hideWarning()
-    })
+    }
 
     // Close dialog on backdrop click
     dialog.addEventListener('click', e => {
