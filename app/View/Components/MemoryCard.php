@@ -2,6 +2,7 @@
 
 namespace App\View\Components;
 
+use App\Models\Child;
 use App\Models\Media;
 use App\Models\Memory;
 use App\Models\WebClipping;
@@ -23,6 +24,9 @@ class MemoryCard extends Component
     /** @var Collection<int, WebClipping>|null */
     public ?Collection $webClippings = null;
 
+    /** @var Collection<int, Child> */
+    public Collection $children;
+
     public function __construct(public Memory $memory)
     {
         $this->media = $memory->getMedia();
@@ -31,6 +35,7 @@ class MemoryCard extends Component
         $this->audioClips = $this->media->where('type', 'audio');
 
         $this->webClippings = $memory->getWebClippings();
+        $this->children = $memory->children;
     }
 
     public function render(): View
@@ -42,6 +47,7 @@ class MemoryCard extends Component
             'videos' => $this->videos,
             'audioClips' => $this->audioClips,
             'webClippings' => $this->webClippings,
+            'children' => $this->children,
         ]);
     }
 }

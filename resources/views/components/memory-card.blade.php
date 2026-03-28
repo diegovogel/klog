@@ -85,7 +85,15 @@
     @endif
 
     <footer class="memory-card__footer">
-        <time datetime="{{ $memory->memory_date->toDateString() }}">{{ $memory->memory_date->format('M j, Y') }}</time>
+        <div class="memory-card__footer-left">
+            <time datetime="{{ $memory->memory_date->toDateString() }}">{{ $memory->memory_date->format('M j, Y') }}</time>
+            @if($children->isNotEmpty())
+                <span class="memory-card__footer-pipe">|</span>
+                @foreach($children as $child)
+                    <span class="memory-card__child-label">{{ $child->name }}</span>
+                @endforeach
+            @endif
+        </div>
         <form method="POST" action="{{ route('memories.destroy', $memory) }}" data-confirm-delete>
             @csrf
             @method('DELETE')

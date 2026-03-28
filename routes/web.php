@@ -7,6 +7,7 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TwoFactorSettingsController;
 use App\Http\Controllers\UploadController;
 use App\Http\Requests\StoreMemoryRequest;
+use App\Models\Child;
 use App\Models\Memory;
 use App\Services\HtmlSanitizer;
 use App\Services\MediaStorageService;
@@ -71,7 +72,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/', function () {
             return view('memory-feed', [
-                'memories' => Memory::latest('memory_date')->paginate(10),
+                'memories' => Memory::with('children')->latest('memory_date')->paginate(10),
             ]);
         });
 
@@ -80,6 +81,7 @@ Route::middleware('auth')->group(function () {
 
             return view('memories.create', [
                 'latestMemoryDate' => $latestMemoryDate,
+                'children' => Child::orderBy('name')->get(),
             ]);
         })->name('memories.create');
 
@@ -100,6 +102,14 @@ Route::middleware('auth')->group(function () {
 
             foreach ($request->validated('clippings', []) as $url) {
                 $memory->webClippings()->create(['url' => $url]);
+            }
+
+            $childIds = collect($request->validated('children', []))->map(fn ($id) => (int) $id);
+            foreach ($request->validated('new_children', []) as $name) {
+                $childIds->push(Child::findOrCreateByName($name)->id);
+            }
+            if ($childIds->isNotEmpty()) {
+                $memory->children()->attach($childIds->unique());
             }
 
             return redirect('/')->with('success', 'Memory saved.');

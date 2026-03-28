@@ -5,6 +5,7 @@ import './components/media-upload'
 import './components/media-capture'
 import './components/memory-date-warning'
 import './components/web-clippings'
+import './components/child-selector'
 import './components/confirm-delete'
 
 if ('serviceWorker' in navigator) {
