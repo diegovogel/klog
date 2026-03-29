@@ -127,6 +127,25 @@ php artisan 2fa:uninstall-authenticator      # Remove authenticator packages, mi
 - Pest BDD-style tests with `describe`/`it` blocks and `expect()` fluent assertions
 - Commit messages: imperative mood, short descriptive titles
 
+## Code Review
+
+**OpenAI Codex** is used for automated PR code review. Follow this process for all PRs:
+
+1. **Create the PR** via `gh pr create`.
+2. **Request a review** by posting a separate comment: `@codex review`.
+3. **Poll for feedback** every 2 minutes by checking `gh api repos/{owner}/{repo}/pulls/{n}/reviews`
+   for new reviews and `gh api repos/{owner}/{repo}/pulls/{n}/comments` for inline suggestions.
+4. **Address feedback** — read the inline comments, make code changes, commit, and push.
+5. **Re-request review** — after each push, post another `@codex review` comment.
+6. **Stop** when either:
+   - Codex posts a comment containing "Didn't find any major issues" (no more changes requested), or
+   - 5 review rounds have been completed (whichever comes first).
+   Cancel the cron job and report the result to the user ("good to go" or "max rounds reached").
+
+Codex reviews appear as reviews with `state: "COMMENTED"` and inline comments from the
+`chatgpt-codex-connector[bot]` user. When Codex has no suggestions, it posts a top-level
+issue comment (not a review) starting with "Codex Review: Didn't find any major issues".
+
 ## Testing
 
 - Tests use in-memory SQLite (`phpunit.xml` overrides DB)
