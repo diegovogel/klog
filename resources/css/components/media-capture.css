@@ -38,6 +38,11 @@
     min-height: 6rem;
 }
 
+.media-capture__preview-container {
+    position: relative;
+    width: 100%;
+}
+
 .media-capture__video-preview {
     width: 100%;
     max-height: 50vh;
@@ -50,6 +55,31 @@
     max-height: 50vh;
     border-radius: var(--klog-radius);
     object-fit: contain;
+}
+
+.media-capture__switch {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.125rem;
+    line-height: 1;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+
+    &:hover {
+        background: rgba(0, 0, 0, 0.7);
+    }
 }
 
 .media-capture__waveform {
