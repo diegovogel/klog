@@ -197,8 +197,10 @@ document.querySelectorAll('[data-media-capture]').forEach(container => {
 
             // Keep existing audio tracks for video mode
             if (currentMode === 'video' && stream) {
+                // Stop the new stream's audio tracks — we reuse the original ones
+                newStream.getAudioTracks().forEach(t => t.stop())
+
                 const audioTracks = stream.getAudioTracks()
-                // Create a combined stream with old audio + new video
                 const combinedStream = new MediaStream([
                     ...newStream.getVideoTracks(),
                     ...audioTracks,
