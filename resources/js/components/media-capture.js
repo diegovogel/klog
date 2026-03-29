@@ -183,38 +183,41 @@ document.querySelectorAll('[data-media-capture]').forEach(container => {
     // ── Camera switch ─────────────────────────────────────────────────────
 
     async function switchCamera () {
+        const previousFacing = facingMode
         facingMode = facingMode === 'environment' ? 'user' : 'environment'
 
-        // Stop existing video tracks
+        const constraints = buildConstraints(currentMode)
+
+        let newStream
+        try {
+            newStream = await navigator.mediaDevices.getUserMedia(constraints)
+        } catch {
+            // Acquiring the new camera failed — keep the current stream intact
+            facingMode = previousFacing
+            return
+        }
+
+        // New camera acquired — now stop the old video tracks
         if (stream) {
             stream.getVideoTracks().forEach(t => t.stop())
         }
 
-        const constraints = buildConstraints(currentMode)
+        // Keep existing audio tracks for video mode
+        if (currentMode === 'video' && stream) {
+            // Stop the new stream's audio tracks — we reuse the original ones
+            newStream.getAudioTracks().forEach(t => t.stop())
 
-        try {
-            const newStream = await navigator.mediaDevices.getUserMedia(constraints)
-
-            // Keep existing audio tracks for video mode
-            if (currentMode === 'video' && stream) {
-                // Stop the new stream's audio tracks — we reuse the original ones
-                newStream.getAudioTracks().forEach(t => t.stop())
-
-                const audioTracks = stream.getAudioTracks()
-                const combinedStream = new MediaStream([
-                    ...newStream.getVideoTracks(),
-                    ...audioTracks,
-                ])
-                stream = combinedStream
-            } else {
-                stream = newStream
-            }
-
-            videoPreview.srcObject = stream
-        } catch {
-            // If the requested camera isn't available, revert
-            facingMode = facingMode === 'environment' ? 'user' : 'environment'
+            const audioTracks = stream.getAudioTracks()
+            const combinedStream = new MediaStream([
+                ...newStream.getVideoTracks(),
+                ...audioTracks,
+            ])
+            stream = combinedStream
+        } else {
+            stream = newStream
         }
+
+        videoPreview.srcObject = stream
     }
 
     function snapPhoto () {
