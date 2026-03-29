@@ -34,9 +34,19 @@ class Tag extends Model
 
     public static function findOrCreateByName(string $name): self
     {
-        return static::firstOrCreate(
-            ['slug' => Str::slug($name)],
-            ['name' => $name]
-        );
+        $name = trim($name);
+        $slug = Str::slug($name);
+
+        $tag = static::withTrashed()->where('slug', $slug)->first();
+
+        if ($tag) {
+            if ($tag->trashed()) {
+                $tag->restore();
+            }
+
+            return $tag;
+        }
+
+        return static::create(['name' => $name]);
     }
 }

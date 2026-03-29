@@ -6,6 +6,7 @@ import './components/media-capture'
 import './components/memory-date-warning'
 import './components/web-clippings'
 import './components/child-selector'
+import './components/tag-input'
 import './components/confirm-delete'
 import './components/submit-loading'
 

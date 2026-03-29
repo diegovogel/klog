@@ -55,6 +55,8 @@
 
         <x-child-selector :children="$children" />
 
+        <x-tag-input :tags="$tags" />
+
         <div class="memory-form__submit">
             <button type="submit" class="btn btn--primary btn--block">Save Memory</button>
         </div>
