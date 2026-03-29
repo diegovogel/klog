@@ -21,9 +21,12 @@
         </div>
 
         <div data-capture-body class="media-capture__body">
-            <video data-capture-video-preview class="media-capture__video-preview" autoplay muted playsinline hidden></video>
-            <canvas data-capture-canvas hidden></canvas>
-            <img data-capture-photo-preview class="media-capture__photo-preview" alt="Captured photo" hidden>
+            <div class="media-capture__preview-container" hidden>
+                <video data-capture-video-preview class="media-capture__video-preview" autoplay muted playsinline hidden></video>
+                <canvas data-capture-canvas hidden></canvas>
+                <img data-capture-photo-preview class="media-capture__photo-preview" alt="Captured photo" hidden>
+                <button type="button" data-capture-switch class="media-capture__switch" aria-label="Switch camera" hidden>&#x21C5;</button>
+            </div>
             <canvas data-capture-waveform class="media-capture__waveform" width="300" height="80" hidden></canvas>
             <div data-capture-timer class="media-capture__timer" hidden>0:00</div>
             <p data-capture-error class="media-capture__error" hidden></p>

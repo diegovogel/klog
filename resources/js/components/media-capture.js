@@ -19,6 +19,7 @@ document.querySelectorAll('[data-media-capture]').forEach(container => {
     // Dialog elements
     const titleEl = dialog.querySelector('[data-capture-title]')
     const bodyEl = dialog.querySelector('[data-capture-body]')
+    const previewContainer = dialog.querySelector('.media-capture__preview-container')
     const videoPreview = dialog.querySelector('[data-capture-video-preview]')
     const canvas = dialog.querySelector('[data-capture-canvas]')
     const photoPreview = dialog.querySelector('[data-capture-photo-preview]')
@@ -30,6 +31,7 @@ document.querySelectorAll('[data-media-capture]').forEach(container => {
     const btnSnap = dialog.querySelector('[data-capture-snap]')
     const btnRetake = dialog.querySelector('[data-capture-retake]')
     const btnUse = dialog.querySelector('[data-capture-use]')
+    const btnSwitch = dialog.querySelector('[data-capture-switch]')
     const btnClose = dialog.querySelector('[data-capture-close]')
 
     let stream = null
@@ -42,6 +44,7 @@ document.querySelectorAll('[data-media-capture]').forEach(container => {
     let analyser = null
     let capturedBlob = null
     let currentMode = null
+    let facingMode = 'environment' // 'environment' = rear, 'user' = front
 
     // Button handlers
     container.querySelectorAll('[data-capture-mode]').forEach(btn => {
@@ -56,6 +59,7 @@ document.querySelectorAll('[data-media-capture]').forEach(container => {
     btnSnap.addEventListener('click', snapPhoto)
     btnRetake.addEventListener('click', retakePhoto)
     btnUse.addEventListener('click', usePhoto)
+    btnSwitch.addEventListener('click', switchCamera)
 
     async function open (mode) {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -95,10 +99,9 @@ document.querySelectorAll('[data-media-capture]').forEach(container => {
             return { audio: true }
         }
         if (mode === 'video') {
-            return { video: true, audio: true }
+            return { video: { facingMode }, audio: true }
         }
-        // photo — prefer rear camera on mobile
-        return { video: { facingMode: 'environment' } }
+        return { video: { facingMode } }
     }
 
     // ── Audio ────────────────────────────────────────────────────────────
@@ -160,17 +163,61 @@ document.querySelectorAll('[data-media-capture]').forEach(container => {
     // ── Video ────────────────────────────────────────────────────────────
 
     function setupVideoMode () {
+        previewContainer.hidden = false
         videoPreview.srcObject = stream
         videoPreview.hidden = false
+        btnSwitch.hidden = false
         btnStart.hidden = false
     }
 
     // ── Photo ────────────────────────────────────────────────────────────
 
     function setupPhotoMode () {
+        previewContainer.hidden = false
         videoPreview.srcObject = stream
         videoPreview.hidden = false
+        btnSwitch.hidden = false
         btnSnap.hidden = false
+    }
+
+    // ── Camera switch ─────────────────────────────────────────────────────
+
+    async function switchCamera () {
+        const previousFacing = facingMode
+        facingMode = facingMode === 'environment' ? 'user' : 'environment'
+
+        const constraints = buildConstraints(currentMode)
+
+        let newStream
+        try {
+            newStream = await navigator.mediaDevices.getUserMedia(constraints)
+        } catch {
+            // Acquiring the new camera failed — keep the current stream intact
+            facingMode = previousFacing
+            return
+        }
+
+        // New camera acquired — now stop the old video tracks
+        if (stream) {
+            stream.getVideoTracks().forEach(t => t.stop())
+        }
+
+        // Keep existing audio tracks for video mode
+        if (currentMode === 'video' && stream) {
+            // Stop the new stream's audio tracks — we reuse the original ones
+            newStream.getAudioTracks().forEach(t => t.stop())
+
+            const audioTracks = stream.getAudioTracks()
+            const combinedStream = new MediaStream([
+                ...newStream.getVideoTracks(),
+                ...audioTracks,
+            ])
+            stream = combinedStream
+        } else {
+            stream = newStream
+        }
+
+        videoPreview.srcObject = stream
     }
 
     function snapPhoto () {
@@ -190,6 +237,7 @@ document.querySelectorAll('[data-media-capture]').forEach(container => {
             photoPreview.hidden = false
             videoPreview.hidden = true
             btnSnap.hidden = true
+            btnSwitch.hidden = true
             btnRetake.hidden = false
             btnUse.hidden = false
         }, 'image/jpeg', 0.92)
@@ -202,6 +250,7 @@ document.querySelectorAll('[data-media-capture]').forEach(container => {
 
         videoPreview.hidden = false
         btnSnap.hidden = false
+        btnSwitch.hidden = false
         btnRetake.hidden = true
         btnUse.hidden = true
     }
@@ -266,6 +315,7 @@ document.querySelectorAll('[data-media-capture]').forEach(container => {
 
         btnStart.hidden = true
         btnStop.hidden = false
+        btnSwitch.hidden = true
         timerEl.hidden = false
         updateTimer()
         timerInterval = setInterval(updateTimer, 1000)
@@ -403,10 +453,13 @@ document.querySelectorAll('[data-media-capture]').forEach(container => {
     }
 
     function resetUI () {
+        facingMode = 'environment'
+        previewContainer.hidden = true
         videoPreview.hidden = true
         videoPreview.srcObject = null
         photoPreview.hidden = true
         photoPreview.src = ''
+        btnSwitch.hidden = true
         waveformCanvas.hidden = true
         timerEl.hidden = true
         timerEl.textContent = `0:00 / ${formatTime(Math.floor(MAX_DURATION_MS / 1000))}`
