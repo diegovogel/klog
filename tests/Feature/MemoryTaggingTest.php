@@ -104,6 +104,20 @@ describe('memory tagging', function () {
             ->assertSessionHasErrors('tags.0');
     });
 
+    it('rejects soft-deleted tag IDs', function () {
+        $user = User::factory()->create();
+        $tag = Tag::factory()->create(['name' => 'coffee', 'slug' => 'coffee']);
+        $tag->delete();
+
+        $this->actingAs($user)
+            ->post(route('memories.store'), [
+                'title' => 'Deleted tag',
+                'memory_date' => '2026-02-15',
+                'tags' => [$tag->id],
+            ])
+            ->assertSessionHasErrors('tags.0');
+    });
+
     it('rejects new tag names exceeding 100 characters', function () {
         $user = User::factory()->create();
 

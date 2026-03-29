@@ -53,6 +53,14 @@ document.querySelectorAll('[data-tag-input]').forEach(container => {
         }
     })
 
+    // Add any pending text as a tag when the form is submitted
+    const form = field.closest('form')
+    if (form) {
+        form.addEventListener('submit', () => {
+            addTag(field.value)
+        })
+    }
+
     pills.addEventListener('click', e => {
         const removeBtn = e.target.closest('.tag-input__remove')
         if (removeBtn) {
