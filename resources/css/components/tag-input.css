@@ -1,0 +1,43 @@
+.tag-input__pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--klog-space-sm);
+}
+
+.tag-input__pills:not(:empty) {
+    margin-block-start: var(--klog-space-sm);
+}
+
+.tag-input__pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.35rem 0.5rem 0.35rem 0.75rem;
+    font-size: 0.875rem;
+    font-family: var(--klog-font-sans);
+    color: var(--klog-primary-text);
+    background-color: var(--klog-primary);
+    border: 1px solid var(--klog-primary);
+    border-radius: var(--klog-radius);
+    user-select: none;
+}
+
+.tag-input__remove {
+    all: unset;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--klog-primary-text);
+    opacity: 0.7;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: opacity 0.15s ease;
+}
+
+.tag-input__remove:hover {
+    opacity: 1;
+}

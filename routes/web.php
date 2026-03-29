@@ -9,6 +9,7 @@ use App\Http\Controllers\UploadController;
 use App\Http\Requests\StoreMemoryRequest;
 use App\Models\Child;
 use App\Models\Memory;
+use App\Models\Tag;
 use App\Services\HtmlSanitizer;
 use App\Services\MediaStorageService;
 use Illuminate\Support\Facades\Route;
@@ -72,7 +73,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/', function () {
             return view('memory-feed', [
-                'memories' => Memory::with('children')->latest('memory_date')->paginate(10),
+                'memories' => Memory::with('children', 'tags')->latest('memory_date')->paginate(10),
             ]);
         });
 
@@ -82,6 +83,7 @@ Route::middleware('auth')->group(function () {
             return view('memories.create', [
                 'latestMemoryDate' => $latestMemoryDate,
                 'children' => Child::orderBy('name')->get(),
+                'tags' => Tag::orderBy('name')->get(),
             ]);
         })->name('memories.create');
 
@@ -110,6 +112,14 @@ Route::middleware('auth')->group(function () {
             }
             if ($childIds->isNotEmpty()) {
                 $memory->children()->attach($childIds->unique());
+            }
+
+            $tagIds = collect($request->validated('tags', []))->map(fn ($id) => (int) $id);
+            foreach ($request->validated('new_tags', []) as $name) {
+                $tagIds->push(Tag::findOrCreateByName($name)->id);
+            }
+            if ($tagIds->isNotEmpty()) {
+                $memory->tags()->attach($tagIds->unique());
             }
 
             return redirect('/')->with('success', 'Memory saved.');

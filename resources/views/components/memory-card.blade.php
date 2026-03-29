@@ -99,5 +99,8 @@
             @method('DELETE')
             <button type="submit" class="memory-card__delete-btn">Delete</button>
         </form>
+        @if($tags->isNotEmpty())
+            <div class="memory-card__tags">Tags: {{ $tags->pluck('name')->implode(', ') }}</div>
+        @endif
     </footer>
 </article>

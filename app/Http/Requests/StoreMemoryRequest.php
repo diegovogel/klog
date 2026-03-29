@@ -47,6 +47,10 @@ class StoreMemoryRequest extends FormRequest
             'children.*' => ['required', 'integer', 'exists:children,id'],
             'new_children' => ['nullable', 'array'],
             'new_children.*' => ['required', 'string', 'max:100'],
+            'tags' => ['nullable', 'array'],
+            'tags.*' => ['required', 'integer', 'exists:tags,id,deleted_at,NULL'],
+            'new_tags' => ['nullable', 'array'],
+            'new_tags.*' => ['required', 'string', 'max:100'],
         ];
     }
 
