@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\SearchIndexer;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
@@ -47,7 +48,7 @@ return new class extends Migration
                     DB::table('memories_fts')->insert([
                         'rowid' => $memory->id,
                         'title' => (string) ($memory->title ?? ''),
-                        'content' => strip_tags((string) ($memory->content ?? '')),
+                        'content' => SearchIndexer::extractText((string) ($memory->content ?? '')),
                         'tag_names' => $tagNames,
                         'clipping_urls' => $clippingUrls,
                     ]);

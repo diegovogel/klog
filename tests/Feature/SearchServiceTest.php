@@ -28,6 +28,25 @@ describe('buildMatchQuery', function () {
     it('handles unicode letters and numbers', function () {
         expect($this->search->buildMatchQuery('café 2026'))->toBe('café* 2026*');
     });
+
+    it('lowercases tokens so fts5 reserved words never become operators', function () {
+        // Uppercase AND/OR/NOT would otherwise be interpreted as FTS5
+        // operators and throw a syntax error when appended with `*`.
+        expect($this->search->buildMatchQuery('AND OR NOT hello'))
+            ->toBe('and* or* not* hello*');
+    });
+});
+
+describe('reserved keyword hardening', function () {
+    it('returns results without exploding on all-caps boolean words', function () {
+        Memory::factory()->create(['title' => 'Needle']);
+
+        // Before the lowercase normalization this threw
+        // "fts5: syntax error near AND"; assert it now returns cleanly.
+        $results = $this->search->search('AND OR NOT', []);
+
+        expect($results->total())->toBe(0);
+    });
 });
 
 describe('search by query', function () {

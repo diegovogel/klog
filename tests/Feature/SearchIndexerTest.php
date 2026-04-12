@@ -22,7 +22,11 @@ describe('index', function () {
         $row = DB::table('memories_fts')->where('rowid', $memory->id)->first();
 
         expect($row->title)->toBe('Dinner at the diner')
-            ->and($row->content)->toBe('We had pancakes.')
+            // Tags are replaced with spaces to preserve word boundaries,
+            // so "<strong>pancakes</strong>." becomes "pancakes ." with a
+            // space before the period. FTS5 ignores punctuation, so this
+            // is equivalent to "pancakes." for search purposes.
+            ->and($row->content)->toBe('We had pancakes .')
             ->and($row->tag_names)->toBe('')
             ->and($row->clipping_urls)->toBe('');
     });
@@ -50,6 +54,51 @@ describe('index', function () {
 
         expect($rows)->toHaveCount(1)
             ->and($rows->first()->title)->toBe('Updated');
+    });
+
+    it('preserves word boundaries when stripping html from content', function () {
+        // Naive strip_tags() would produce "helloworld" and "paragraphonefoo"
+        // which breaks FTS tokenization.
+        $memory = Memory::factory()->create([
+            'title' => 'Boundary test',
+            'content' => '<p>Hello<br>world</p><p>paragraph</p><p>one</p><div>foo</div>',
+        ]);
+
+        $this->indexer->index($memory);
+
+        $row = DB::table('memories_fts')->where('rowid', $memory->id)->first();
+
+        expect($row->content)->toBe('Hello world paragraph one foo');
+    });
+
+    it('indexes html-stripped content in a way that lets FTS match individual words', function () {
+        $memory = Memory::factory()->create([
+            'title' => 'Boundary search',
+            'content' => '<p>Hello<br>world</p>',
+        ]);
+
+        $results = app(\App\Services\SearchService::class)->search('world', []);
+
+        expect($results->total())->toBe(1)
+            ->and($results->first()->id)->toBe($memory->id);
+    });
+});
+
+describe('extractText', function () {
+    it('replaces tags with spaces to preserve word boundaries', function () {
+        expect(\App\Services\SearchIndexer::extractText('hello<br>world'))->toBe('hello world');
+    });
+
+    it('decodes html entities', function () {
+        expect(\App\Services\SearchIndexer::extractText('caf&eacute; &amp; cream'))->toBe('café & cream');
+    });
+
+    it('collapses runs of whitespace', function () {
+        expect(\App\Services\SearchIndexer::extractText('<p>one</p>  <p>two</p>'))->toBe('one two');
+    });
+
+    it('returns empty string for empty input', function () {
+        expect(\App\Services\SearchIndexer::extractText(''))->toBe('');
     });
 });
 

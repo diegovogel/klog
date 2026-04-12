@@ -75,7 +75,11 @@ class SearchService
         }
 
         return collect($tokens)
-            ->map(fn (string $token): string => $token.'*')
+            // Lowercase each token so FTS5 doesn't interpret all-caps words
+            // like AND / OR / NOT as reserved operators (which would emit a
+            // syntax error on `AND*`). Porter is case-insensitive so this
+            // changes nothing about what actually matches.
+            ->map(fn (string $token): string => mb_strtolower($token).'*')
             ->implode(' ');
     }
 }

@@ -26,7 +26,7 @@ class SearchIndexer
 
         $row = [
             'title' => (string) ($memory->title ?? ''),
-            'content' => strip_tags((string) ($memory->content ?? '')),
+            'content' => self::extractText((string) ($memory->content ?? '')),
             'tag_names' => $memory->tags->pluck('name')->implode(' '),
             'clipping_urls' => $memory->webClippings->pluck('url')->implode(' '),
         ];
@@ -47,6 +47,26 @@ class SearchIndexer
     public function remove(Memory $memory): void
     {
         DB::table('memories_fts')->where('rowid', $memory->id)->delete();
+    }
+
+    /**
+     * Strip HTML from indexed content while preserving word boundaries.
+     *
+     * A naive `strip_tags($html)` collapses `hello<br>world` into
+     * `helloworld`, which poisons FTS5 tokenization — the two words get
+     * indexed as one, and searches for either miss. Replace every tag
+     * with a space before stripping, then collapse runs of whitespace.
+     */
+    public static function extractText(string $html): string
+    {
+        if ($html === '') {
+            return '';
+        }
+
+        $spaced = preg_replace('/<[^>]*>/', ' ', $html) ?? $html;
+        $decoded = html_entity_decode($spaced, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        return trim((string) preg_replace('/\s+/', ' ', $decoded));
     }
 
     /**
