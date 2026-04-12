@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\MediaController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TwoFactorSettingsController;
 use App\Http\Controllers\UploadController;
@@ -77,6 +78,8 @@ Route::middleware('auth')->group(function () {
             ]);
         });
 
+        Route::get('search', [SearchController::class, 'index'])->name('search');
+
         Route::get('memories/create', function () {
             $latestMemoryDate = Memory::max('memory_date');
 
@@ -122,6 +125,11 @@ Route::middleware('auth')->group(function () {
             if ($tagIds->isNotEmpty()) {
                 $memory->tags()->attach($tagIds->unique());
             }
+
+            // The initial Memory::create() fired the observer before tags,
+            // web clippings, and children were attached. Reindex once all
+            // relationships are in place so search sees the complete row.
+            $memory->reindexSearch();
 
             return redirect('/')->with('success', 'Memory saved.');
         })->name('memories.store');

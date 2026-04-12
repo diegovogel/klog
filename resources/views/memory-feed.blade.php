@@ -1,5 +1,19 @@
 <x-layouts.app title="Feed – {{ config('app.name', 'Klog') }}">
 
+    <div class="feed__search">
+        <form method="GET" action="{{ route('search') }}" class="feed__search-form" role="search">
+            <input
+                type="search"
+                name="q"
+                class="feed__search-input"
+                placeholder="Search memories…"
+                aria-label="Search memories"
+                autocomplete="off"
+            >
+            <button type="submit">Search</button>
+        </form>
+    </div>
+
     @if($memories->isEmpty())
         <div class="feed__empty">
             <h2 class="feed__empty-title">No memories yet</h2>

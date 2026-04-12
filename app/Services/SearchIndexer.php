@@ -1,0 +1,73 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Memory;
+use Illuminate\Support\Facades\DB;
+
+/**
+ * Maintains the `memories_fts` virtual table that backs search.
+ *
+ * Every mutation that changes a memory's searchable content — its title,
+ * body text, tag list, or web clipping URLs — should flow through this
+ * service so the index stays consistent with the source of truth.
+ */
+class SearchIndexer
+{
+    /**
+     * Insert or update the FTS row for a single memory.
+     *
+     * Reloads the memory's tags and webClippings so the caller doesn't
+     * have to remember to eager-load them first.
+     */
+    public function index(Memory $memory): void
+    {
+        $memory->loadMissing(['tags', 'webClippings']);
+
+        $row = [
+            'title' => (string) ($memory->title ?? ''),
+            'content' => strip_tags((string) ($memory->content ?? '')),
+            'tag_names' => $memory->tags->pluck('name')->implode(' '),
+            'clipping_urls' => $memory->webClippings->pluck('url')->implode(' '),
+        ];
+
+        // FTS5 virtual tables support UPSERT-by-rowid via DELETE+INSERT in a
+        // single statement. Guard with a transaction so concurrent writes
+        // can't leave the row half-removed.
+        DB::transaction(function () use ($memory, $row): void {
+            DB::table('memories_fts')->where('rowid', $memory->id)->delete();
+            DB::table('memories_fts')->insert(array_merge(['rowid' => $memory->id], $row));
+        });
+    }
+
+    /**
+     * Remove the FTS row for a memory. Safe to call even if the row
+     * isn't indexed.
+     */
+    public function remove(Memory $memory): void
+    {
+        DB::table('memories_fts')->where('rowid', $memory->id)->delete();
+    }
+
+    /**
+     * Wipe the index and rebuild it from scratch. Used by search:reindex
+     * and by install/recovery workflows.
+     */
+    public function rebuild(): int
+    {
+        DB::table('memories_fts')->delete();
+
+        $count = 0;
+        Memory::query()
+            ->with(['tags', 'webClippings'])
+            ->orderBy('id')
+            ->chunk(200, function ($memories) use (&$count): void {
+                foreach ($memories as $memory) {
+                    $this->index($memory);
+                    $count++;
+                }
+            });
+
+        return $count;
+    }
+}

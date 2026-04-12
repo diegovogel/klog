@@ -4,6 +4,11 @@ namespace App\Models;
 
 use App\Enums\MediaType;
 use App\Enums\MemoryType;
+use App\Observers\MemoryObserver;
+use App\Services\SearchIndexer;
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,6 +20,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 
+#[ObservedBy([MemoryObserver::class])]
 class Memory extends Model
 {
     use HasFactory, SoftDeletes;
@@ -114,6 +120,7 @@ class Memory extends Model
         });
 
         $this->tags()->sync($tags->pluck('id'));
+        $this->reindexSearch();
     }
 
     public function attachTagNames(array $tagNames): void
@@ -125,6 +132,88 @@ class Memory extends Model
             ->map(fn ($name) => Tag::findOrCreateByName($name)->id);
 
         $this->tags()->syncWithoutDetaching($tagIds);
+        $this->reindexSearch();
+    }
+
+    /**
+     * Refresh this memory's entry in the FTS5 search index.
+     *
+     * Call after any mutation that changes searchable fields but doesn't
+     * fire a model event on Memory — e.g. attaching tags via the pivot,
+     * or adding a web clipping through the relationship.
+     */
+    public function reindexSearch(): void
+    {
+        app(SearchIndexer::class)->index($this->fresh(['tags', 'webClippings']) ?? $this);
+    }
+
+    /**
+     * Filter memories whose derived type overlaps any of the given types.
+     *
+     * OR logic — selecting "photo" and "video" returns memories with photos,
+     * videos, or both. An empty array is a no-op.
+     *
+     * @param  array<int, string>  $types
+     */
+    public function scopeFilterByTypes(Builder $query, array $types): Builder
+    {
+        if ($types === []) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $outer) use ($types): void {
+            foreach ($types as $type) {
+                $outer->orWhere(function (Builder $inner) use ($type): void {
+                    match ($type) {
+                        MemoryType::TEXT->value => $inner
+                            ->whereNotNull('memories.content')
+                            ->where('memories.content', '!=', ''),
+                        MemoryType::WEBCLIP->value => $inner->whereHas('webClippings'),
+                        MemoryType::PHOTO->value => $inner->whereHas('media', fn (Builder $m) => $m->where('type', MediaType::IMAGE->value)),
+                        MemoryType::VIDEO->value => $inner->whereHas('media', fn (Builder $m) => $m->where('type', MediaType::VIDEO->value)),
+                        MemoryType::AUDIO->value => $inner->whereHas('media', fn (Builder $m) => $m->where('type', MediaType::AUDIO->value)),
+                        default => null,
+                    };
+                });
+            }
+        });
+    }
+
+    public function scopeFilterByDateRange(Builder $query, ?CarbonInterface $from, ?CarbonInterface $to): Builder
+    {
+        if ($from !== null) {
+            $query->where('memories.memory_date', '>=', $from->copy()->startOfDay());
+        }
+
+        if ($to !== null) {
+            $query->where('memories.memory_date', '<=', $to->copy()->endOfDay());
+        }
+
+        return $query;
+    }
+
+    /**
+     * @param  array<int, int>  $childIds
+     */
+    public function scopeFilterByChildren(Builder $query, array $childIds): Builder
+    {
+        if ($childIds === []) {
+            return $query;
+        }
+
+        return $query->whereHas(
+            'children',
+            fn (Builder $q) => $q->whereIn('children.id', $childIds),
+        );
+    }
+
+    public function scopeFilterByUser(Builder $query, ?int $userId): Builder
+    {
+        if ($userId === null) {
+            return $query;
+        }
+
+        return $query->where('memories.user_id', $userId);
     }
 
     /**
