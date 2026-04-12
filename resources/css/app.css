@@ -6,6 +6,7 @@
 /* Views */
 @import "views/login.css";
 @import "views/feed.css";
+@import "views/search.css";
 @import "views/create-memory.css";
 @import "views/settings.css";
 

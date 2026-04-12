@@ -35,6 +35,7 @@ php artisan clippings:uninstall-screenshots  # Remove screenshot packages
 php artisan clippings:screenshot             # Capture screenshots for clippings (--limit=10, --force)
 php artisan 2fa:install-authenticator        # Install TOTP authenticator packages
 php artisan 2fa:uninstall-authenticator      # Remove authenticator packages, migrate users to email 2FA
+php artisan search:reindex                   # Rebuild the memories_fts search index from scratch
 ```
 
 ## Architecture & Design Principles
@@ -87,10 +88,23 @@ php artisan 2fa:uninstall-authenticator      # Remove authenticator packages, mi
   → stored `app_settings` value → iterate users by ID until one succeeds (saved for future errors). Includes
   rate limiting (1 email per unique error per 15 min), infinite-loop prevention, and resilience to pre-migration
   state. Configured in `config/logging.php` and `config/klog.php`.
+- **Full-text search via SQLite FTS5** — search is powered by a `memories_fts` virtual table (FTS5, porter
+  tokenizer + unicode61 with diacritic folding) kept in sync with the source via the `MemoryObserver` and
+  `SearchIndexer` service. Searchable fields: memory title, memory content (HTML stripped), tag names, and
+  web clipping URLs. Stemming (dish ↔ dishes) and prefix matching (birth* → birthday) are built in — the
+  `SearchService` appends `*` to each sanitized token. Filters (types, date range, children, author) apply
+  identically whether or not a text query is present, via `Memory` query scopes (`scopeFilterByTypes`,
+  `scopeFilterByDateRange`, `scopeFilterByChildren`, `scopeFilterByUser`). When the query is empty, search
+  returns memories ordered by `memory_date` DESC (same as the feed). When text is present, results are
+  joined against FTS5 and ordered by `memories_fts.rank` (BM25). No external dependencies, no separate
+  server process — the index travels with the SQLite file. Rebuild manually with `php artisan search:reindex`
+  if the index ever falls out of sync. The `MemoryObserver` auto-reindexes on save/update/delete/restore;
+  callers that mutate relationships (tags, web clippings) without touching the Memory row call
+  `$memory->reindexSearch()` explicitly — see `memories.store` route and `Memory::syncTagNames` / `attachTagNames`.
 
 ## Data Model
 
-- **Memory** — core entity; has title (nullable), content (nullable), captured_at
+- **Memory** — core entity; has user_id (required), title (nullable), content (nullable), memory_date
 - **Media** — polymorphic attachment (image/video/audio) with type enum, JSON metadata, ordering,
   processing_status (ProcessingStatus enum)
 - **WebClipping** — URL snapshot belonging to a Memory; has title (nullable), content (nullable, minimal HTML),
@@ -104,7 +118,7 @@ php artisan 2fa:uninstall-authenticator      # Remove authenticator packages, mi
 
 ### Key Relationships
 
-- `Memory` hasMany `Media` (morphMany), hasMany `WebClipping`, belongsToMany `Tag`
+- `Memory` belongsTo `User`, hasMany `Media` (morphMany), hasMany `WebClipping`, belongsToMany `Tag`, belongsToMany `Child`
 - `Media` morphTo `mediable` (Memory or WebClipping)
 - `Tag` belongsToMany `Memory`
 
@@ -156,16 +170,17 @@ issue comment (not a review) starting with "Codex Review: Didn't find any major 
 ## Project Structure
 
 ```
-app/Console/Commands/ — Artisan commands (user:create, user:reset-password, media:migrate-to-private, clippings:*, 2fa:*)
+app/Console/Commands/ — Artisan commands (user:create, user:reset-password, media:migrate-to-private, clippings:*, 2fa:*, search:reindex)
 app/Enums/            — PHP enums (MemoryType, MediaType, MimeType, TwoFactorMethod, ProcessingStatus)
-app/Http/Controllers/ — Controllers (Auth/LoginController, Auth/TwoFactorChallengeController, TwoFactorSettingsController, MediaController, UploadController)
+app/Http/Controllers/ — Controllers (Auth/LoginController, Auth/TwoFactorChallengeController, TwoFactorSettingsController, MediaController, UploadController, SearchController)
 app/Http/Middleware/  — Custom middleware (EnsureTwoFactorChallenge)
-app/Http/Requests/    — Form request validation (Auth/LoginRequest, Auth/TwoFactorChallengeRequest, InitUploadRequest, StoreChunkRequest)
+app/Http/Requests/    — Form request validation (Auth/LoginRequest, Auth/TwoFactorChallengeRequest, InitUploadRequest, StoreChunkRequest, SearchRequest)
 app/Models/           — Eloquent models
+app/Observers/        — Eloquent observers (MemoryObserver for search index sync)
 app/Logging/          — Custom Monolog handlers (EmailLogHandler)
 app/Mail/             — Mailable classes (ErrorOccurred, TwoFactorCodeMail)
 app/Jobs/             — Queued jobs (OptimizeMedia)
-app/Services/         — Business logic (MediaStorageService, MediaOptimizationService, MaintainerResolverService, ScreenshotService, TwoFactorService, AuthenticatorService, WebClippingContentService, HtmlSanitizer)
+app/Services/         — Business logic (MediaStorageService, MediaOptimizationService, MaintainerResolverService, ScreenshotService, TwoFactorService, AuthenticatorService, WebClippingContentService, HtmlSanitizer, SearchService, SearchIndexer)
 database/migrations/  — Schema definitions
 database/factories/   — Test data factories
 database/seeders/     — Database seeders

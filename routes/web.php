@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\MediaController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TwoFactorSettingsController;
 use App\Http\Controllers\UploadController;
@@ -77,6 +78,8 @@ Route::middleware('auth')->group(function () {
             ]);
         });
 
+        Route::get('search', [SearchController::class, 'index'])->name('search');
+
         Route::get('memories/create', function () {
             $latestMemoryDate = Memory::max('memory_date');
 
@@ -88,12 +91,16 @@ Route::middleware('auth')->group(function () {
         })->name('memories.create');
 
         Route::post('memories', function (StoreMemoryRequest $request, HtmlSanitizer $sanitizer, MediaStorageService $mediaStorage) {
-            $memory = Memory::create([
+            // Skip MemoryObserver here — its `saved` handler would index
+            // an empty row before tags, web clippings, and children are
+            // attached below. One explicit reindexSearch() at the bottom
+            // does the real work.
+            $memory = Memory::withoutEvents(fn () => Memory::create([
                 'user_id' => $request->user()->id,
                 'title' => $request->validated('title'),
                 'content' => $sanitizer->sanitize($request->validated('content')),
                 'memory_date' => $request->validated('memory_date'),
-            ]);
+            ]));
 
             if ($request->has('uploads')) {
                 $mediaStorage->attachUploadSessions($memory, $request->validated('uploads'));
@@ -122,6 +129,8 @@ Route::middleware('auth')->group(function () {
             if ($tagIds->isNotEmpty()) {
                 $memory->tags()->attach($tagIds->unique());
             }
+
+            $memory->reindexSearch();
 
             return redirect('/')->with('success', 'Memory saved.');
         })->name('memories.store');
