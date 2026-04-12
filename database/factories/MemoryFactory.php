@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Memory;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -16,6 +17,7 @@ class MemoryFactory extends Factory
         $date = $this->faker->dateTimeBetween('-5 years', 'now');
 
         return [
+            'user_id' => User::factory(),
             'title' => Str::title($this->faker->words(rand(1, 5), true)),
             'content' => $this->faker->paragraph(rand(0, 4)),
             'memory_date' => $date,

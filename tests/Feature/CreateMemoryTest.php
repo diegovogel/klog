@@ -35,6 +35,20 @@ describe('create memory', function () {
         expect(Memory::where('title', 'Beach day')->exists())->toBeTrue();
     });
 
+    it('attributes new memories to the authenticated user', function () {
+        $user = User::factory()->create();
+        User::factory()->create(); // another user that should not get the memory
+
+        $this->actingAs($user)
+            ->post(route('memories.store'), [
+                'title' => 'Mine',
+                'memory_date' => '2026-02-15',
+            ])
+            ->assertRedirect('/');
+
+        expect(Memory::first()->user_id)->toBe($user->id);
+    });
+
     it('stores a memory without a title', function () {
         $user = User::factory()->create();
 

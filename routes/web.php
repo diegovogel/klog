@@ -89,6 +89,7 @@ Route::middleware('auth')->group(function () {
 
         Route::post('memories', function (StoreMemoryRequest $request, HtmlSanitizer $sanitizer, MediaStorageService $mediaStorage) {
             $memory = Memory::create([
+                'user_id' => $request->user()->id,
                 'title' => $request->validated('title'),
                 'content' => $sanitizer->sanitize($request->validated('content')),
                 'memory_date' => $request->validated('memory_date'),

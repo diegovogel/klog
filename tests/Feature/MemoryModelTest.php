@@ -3,6 +3,7 @@
 use App\Models\Media;
 use App\Models\Memory;
 use App\Models\Tag;
+use App\Models\User;
 use App\Models\WebClipping;
 
 it('should have many media items', function () {
@@ -10,6 +11,14 @@ it('should have many media items', function () {
     Media::factory(3)->for($memory, 'mediable')->create();
 
     expect($memory->media()->count())->toBe(3);
+});
+
+it('belongs to a user', function () {
+    $user = User::factory()->create();
+    $memory = Memory::factory()->for($user)->create();
+
+    expect($memory->user)->toBeInstanceOf(User::class)
+        ->and($memory->user->id)->toBe($user->id);
 });
 
 describe('derived types', function () {
