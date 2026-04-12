@@ -15,6 +15,15 @@
         "boost:mcp"
       ],
       "command": "php"
+    },
+    "mdemg": {
+      "args": [
+        "mcp"
+      ],
+      "command": "mdemg",
+      "env": {
+        "MDEMG_ENDPOINT": "http://localhost:9999"
+      }
     }
   }
 }

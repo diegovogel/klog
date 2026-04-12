@@ -1,0 +1,79 @@
+# MDEMG Ingestion Ignore Patterns
+# Syntax: same as .gitignore (line-based, # comments, ! negation)
+
+# Version control
+.git/
+.svn/
+
+# Dependencies
+node_modules/
+vendor/
+__pycache__/
+.venv/
+venv/
+
+# Build artifacts
+build/
+dist/
+target/
+bin/
+
+# IDE/editor
+.idea/
+.vscode/
+.cursor/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Binary / large files
+*.exe
+*.dll
+*.so
+*.dylib
+*.zip
+*.tar.gz
+*.whl
+*.pyc
+*.min.js
+*.bundle.js
+*.map
+
+# Secrets / environment
+.env
+.env.*
+
+# MDEMG runtime
+.mdemg/backups/
+.mdemg/logs/
+
+# From .gitignore
+*.log
+.DS_Store
+.env
+.env.backup
+.env.production
+.phpactor.json
+.phpunit.result.cache
+/.fleet
+/.idea
+/.nova
+/.phpunit.cache
+/.vscode
+/.zed
+/.claude/
+/auth.json
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/storage/database.sqlite
+/storage/pail
+/vendor
+Homestead.json
+Homestead.yaml
+Thumbs.db
