@@ -87,9 +87,17 @@ class Memory extends Model
         return $this->morphMany(Media::class, 'mediable');
     }
 
+    /**
+     * Return the related media collection, respecting eager-loaded data.
+     *
+     * Using `$this->media` directly would work for callers who eager
+     * loaded, but this method predates that convention and is still
+     * referenced from MemoryCard. Keep it, but honor loaded data so
+     * search results (which eager load) don't re-query per card.
+     */
     public function getMedia(): Collection
     {
-        return $this->media()->get();
+        return $this->relationLoaded('media') ? $this->media : $this->media()->get();
     }
 
     public function webClippings(): HasMany
@@ -99,7 +107,7 @@ class Memory extends Model
 
     public function getWebClippings(): Collection
     {
-        return $this->webClippings()->get();
+        return $this->relationLoaded('webClippings') ? $this->webClippings : $this->webClippings()->get();
     }
 
     public function tags(): BelongsToMany
@@ -144,7 +152,7 @@ class Memory extends Model
      */
     public function reindexSearch(): void
     {
-        app(SearchIndexer::class)->index($this->fresh(['tags', 'webClippings']) ?? $this);
+        app(SearchIndexer::class)->index($this);
     }
 
     /**

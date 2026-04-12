@@ -17,12 +17,13 @@ class SearchIndexer
     /**
      * Insert or update the FTS row for a single memory.
      *
-     * Reloads the memory's tags and webClippings so the caller doesn't
-     * have to remember to eager-load them first.
+     * Always re-loads tags and webClippings — callers typically reach
+     * this method right after attaching relationships through the pivot,
+     * and any in-memory Collection cached on the model would be stale.
      */
     public function index(Memory $memory): void
     {
-        $memory->loadMissing(['tags', 'webClippings']);
+        $memory->load(['tags', 'webClippings']);
 
         $row = [
             'title' => (string) ($memory->title ?? ''),
@@ -31,9 +32,8 @@ class SearchIndexer
             'clipping_urls' => $memory->webClippings->pluck('url')->implode(' '),
         ];
 
-        // FTS5 virtual tables support UPSERT-by-rowid via DELETE+INSERT in a
-        // single statement. Guard with a transaction so concurrent writes
-        // can't leave the row half-removed.
+        // DELETE+INSERT is wrapped so concurrent writers can't see a
+        // half-removed row.
         DB::transaction(function () use ($memory, $row): void {
             DB::table('memories_fts')->where('rowid', $memory->id)->delete();
             DB::table('memories_fts')->insert(array_merge(['rowid' => $memory->id], $row));

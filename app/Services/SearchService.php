@@ -27,7 +27,7 @@ class SearchService
     {
         $match = $this->buildMatchQuery($query);
 
-        $builder = Memory::query()->with(['media', 'children', 'tags']);
+        $builder = Memory::query()->with(['media', 'children', 'tags', 'webClippings']);
 
         if ($match !== '') {
             $builder
@@ -63,9 +63,8 @@ class SearchService
      */
     public function buildMatchQuery(string $query): string
     {
-        // Keep letters, numbers, whitespace, hyphens, and underscores.
-        // Everything else becomes a space — including the full set of
-        // FTS5 operator characters: ` " ( ) : * + - ^ AND/OR/NOT ...
+        // Replace FTS5 operator characters (`"():*+-^` etc.) with spaces
+        // so they can't escape into operator syntax.
         $clean = preg_replace('/[^\p{L}\p{N}\s_]+/u', ' ', $query) ?? '';
 
         $tokens = preg_split('/\s+/', trim($clean), -1, PREG_SPLIT_NO_EMPTY) ?: [];

@@ -91,12 +91,16 @@ Route::middleware('auth')->group(function () {
         })->name('memories.create');
 
         Route::post('memories', function (StoreMemoryRequest $request, HtmlSanitizer $sanitizer, MediaStorageService $mediaStorage) {
-            $memory = Memory::create([
+            // Skip MemoryObserver here — its `saved` handler would index
+            // an empty row before tags, web clippings, and children are
+            // attached below. One explicit reindexSearch() at the bottom
+            // does the real work.
+            $memory = Memory::withoutEvents(fn () => Memory::create([
                 'user_id' => $request->user()->id,
                 'title' => $request->validated('title'),
                 'content' => $sanitizer->sanitize($request->validated('content')),
                 'memory_date' => $request->validated('memory_date'),
-            ]);
+            ]));
 
             if ($request->has('uploads')) {
                 $mediaStorage->attachUploadSessions($memory, $request->validated('uploads'));
@@ -126,9 +130,6 @@ Route::middleware('auth')->group(function () {
                 $memory->tags()->attach($tagIds->unique());
             }
 
-            // The initial Memory::create() fired the observer before tags,
-            // web clippings, and children were attached. Reindex once all
-            // relationships are in place so search sees the complete row.
             $memory->reindexSearch();
 
             return redirect('/')->with('success', 'Memory saved.');

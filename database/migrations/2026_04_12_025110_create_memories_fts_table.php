@@ -27,30 +27,39 @@ return new class extends Migration
         SQL);
 
         // Backfill existing rows so upgraders don't have to run search:reindex.
+        // Tags and clipping URLs are fetched once per chunk via whereIn
+        // instead of once per memory — the per-row approach was 2×N queries,
+        // which becomes pain on any reasonably populated database.
         DB::table('memories')
             ->whereNull('deleted_at')
             ->orderBy('id')
             ->chunk(200, function ($memories): void {
+                $memoryIds = $memories->pluck('id')->all();
+
+                $tagsByMemory = DB::table('tags')
+                    ->join('memory_tag', 'tags.id', '=', 'memory_tag.tag_id')
+                    ->whereIn('memory_tag.memory_id', $memoryIds)
+                    ->whereNull('tags.deleted_at')
+                    ->select('memory_tag.memory_id', 'tags.name')
+                    ->get()
+                    ->groupBy('memory_id')
+                    ->map(fn ($rows) => $rows->pluck('name')->implode(' '));
+
+                $clippingsByMemory = DB::table('web_clippings')
+                    ->whereIn('memory_id', $memoryIds)
+                    ->whereNull('deleted_at')
+                    ->select('memory_id', 'url')
+                    ->get()
+                    ->groupBy('memory_id')
+                    ->map(fn ($rows) => $rows->pluck('url')->implode(' '));
+
                 foreach ($memories as $memory) {
-                    $tagNames = DB::table('tags')
-                        ->join('memory_tag', 'tags.id', '=', 'memory_tag.tag_id')
-                        ->where('memory_tag.memory_id', $memory->id)
-                        ->whereNull('tags.deleted_at')
-                        ->pluck('tags.name')
-                        ->implode(' ');
-
-                    $clippingUrls = DB::table('web_clippings')
-                        ->where('memory_id', $memory->id)
-                        ->whereNull('deleted_at')
-                        ->pluck('url')
-                        ->implode(' ');
-
                     DB::table('memories_fts')->insert([
                         'rowid' => $memory->id,
                         'title' => (string) ($memory->title ?? ''),
                         'content' => SearchIndexer::extractText((string) ($memory->content ?? '')),
-                        'tag_names' => $tagNames,
-                        'clipping_urls' => $clippingUrls,
+                        'tag_names' => (string) ($tagsByMemory->get($memory->id) ?? ''),
+                        'clipping_urls' => (string) ($clippingsByMemory->get($memory->id) ?? ''),
                     ]);
                 }
             });
