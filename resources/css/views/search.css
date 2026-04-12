@@ -22,13 +22,14 @@
 }
 
 .search__field {
-    flex: 1;
+    flex: 1 1 auto;
     min-width: 0;
+    margin: 0;
 }
 
-.search__submit {
+button[type="submit"].search__submit {
+    flex: 0 0 auto;
     width: auto;
-    flex-shrink: 0;
 }
 
 .search__filters {
@@ -79,8 +80,10 @@
 }
 
 .search__checkbox input[type="checkbox"] {
-    width: auto;
+    width: 1.15rem;
+    height: 1.15rem;
     margin: 0;
+    flex-shrink: 0;
 }
 
 .search__date {
@@ -152,10 +155,16 @@
 .feed__search-form {
     display: flex;
     gap: var(--klog-space-sm);
+    align-items: center;
 }
 
 .feed__search-input {
-    flex: 1;
+    flex: 1 1 auto;
     min-width: 0;
     margin: 0;
+}
+
+.feed__search-form button[type="submit"] {
+    flex: 0 0 auto;
+    width: auto;
 }
