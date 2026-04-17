@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Validator;
@@ -37,10 +38,13 @@ class CreateUserCommand extends Command
             return self::FAILURE;
         }
 
+        $role = UserRole::from($this->choice('Role', UserRole::values(), UserRole::MEMBER->value));
+
         User::create([
             'name' => $name,
             'email' => $email,
             'password' => $password,
+            'role' => $role,
         ]);
 
         $this->info("User {$email} created.");
