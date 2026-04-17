@@ -51,6 +51,19 @@ describe('two-factor challenge', function () {
                 ->get('/')
                 ->assertRedirect(route('two-factor.challenge'));
         });
+
+        it('keeps device A verified after device B logs in with remember', function () {
+            $user = User::factory()->withTwoFactor(TwoFactorMethod::EMAIL)->create();
+            $service = app(TwoFactorService::class);
+
+            $deviceAToken = $service->generateRememberToken($user);
+            $service->generateRememberToken($user);
+
+            $this->actingAs($user)
+                ->withCookie('two_factor_remember', $deviceAToken)
+                ->get('/')
+                ->assertSuccessful();
+        });
     });
 
     describe('show challenge', function () {
