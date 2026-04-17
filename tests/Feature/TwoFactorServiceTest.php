@@ -156,6 +156,39 @@ describe('remember token', function () {
             ->and($this->service->verifyRememberToken($user->fresh(), $token))->toBeTrue();
     });
 
+    it('keeps previously issued tokens valid when a new one is generated', function () {
+        $user = User::factory()->create();
+
+        $tokenA = $this->service->generateRememberToken($user);
+        $tokenB = $this->service->generateRememberToken($user);
+
+        expect($this->service->verifyRememberToken($user->fresh(), $tokenA))->toBeTrue()
+            ->and($this->service->verifyRememberToken($user->fresh(), $tokenB))->toBeTrue();
+    });
+
+    it('updates last_used_at on a successful verification', function () {
+        $user = User::factory()->create();
+
+        $token = $this->service->generateRememberToken($user);
+
+        expect($user->rememberedDevices()->first()->last_used_at)->toBeNull();
+
+        $this->service->verifyRememberToken($user->fresh(), $token);
+
+        expect($user->rememberedDevices()->first()->last_used_at)->not->toBeNull();
+    });
+
+    it('rejects an expired token', function () {
+        $user = User::factory()->create();
+
+        $token = $this->service->generateRememberToken($user);
+        $days = config('klog.two_factor.remember_days', 30);
+
+        $this->travel($days + 1)->days();
+
+        expect($this->service->verifyRememberToken($user->fresh(), $token))->toBeFalse();
+    });
+
     it('rejects an invalid token', function () {
         $user = User::factory()->create();
 
@@ -175,6 +208,24 @@ describe('remember token', function () {
 
         expect($this->service->verifyRememberToken($user, 'some-token'))->toBeFalse();
     });
+
+    it('prunes expired remembered devices', function () {
+        $user = User::factory()->create();
+
+        $this->service->generateRememberToken($user);
+        $days = config('klog.two_factor.remember_days', 30);
+
+        $this->travel($days + 1)->days();
+
+        $this->service->generateRememberToken($user);
+
+        expect($user->rememberedDevices()->count())->toBe(2);
+
+        $pruned = $this->service->pruneExpiredRememberedDevices();
+
+        expect($pruned)->toBe(1)
+            ->and($user->rememberedDevices()->count())->toBe(1);
+    });
 });
 
 describe('enable and disable', function () {
@@ -191,10 +242,9 @@ describe('enable and disable', function () {
             ->and($user->two_factor_recovery_codes)->toHaveCount(count($codes));
     });
 
-    it('disables two-factor and clears all columns', function () {
-        $user = User::factory()->withTwoFactor(TwoFactorMethod::EMAIL)->create([
-            'two_factor_remember_token' => 'some-token',
-        ]);
+    it('disables two-factor and clears all columns and remembered devices', function () {
+        $user = User::factory()->withTwoFactor(TwoFactorMethod::EMAIL)->create();
+        $this->service->generateRememberToken($user);
 
         $this->service->disable($user);
 
@@ -204,7 +254,7 @@ describe('enable and disable', function () {
             ->and($user->two_factor_secret)->toBeNull()
             ->and($user->two_factor_recovery_codes)->toBeNull()
             ->and($user->two_factor_confirmed_at)->toBeNull()
-            ->and($user->two_factor_remember_token)->toBeNull();
+            ->and($user->rememberedDevices()->count())->toBe(0);
     });
 });
 

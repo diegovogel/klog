@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\UploadSession;
+use App\Services\TwoFactorService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -33,3 +34,7 @@ Schedule::call(function () {
         ->where('completed_at', '<', now()->subWeek())
         ->delete();
 })->dailyAt('03:00');
+
+Schedule::call(function () {
+    app(TwoFactorService::class)->pruneExpiredRememberedDevices();
+})->dailyAt('03:30');

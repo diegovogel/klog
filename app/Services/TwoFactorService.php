@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\TwoFactorMethod;
+use App\Models\TwoFactorRememberedDevice;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
@@ -106,9 +107,11 @@ class TwoFactorService
     public function generateRememberToken(User $user): string
     {
         $token = Str::random(64);
+        $days = config('klog.two_factor.remember_days', 30);
 
-        $user->update([
-            'two_factor_remember_token' => hash('sha256', $token),
+        $user->rememberedDevices()->create([
+            'token_hash' => hash('sha256', $token),
+            'expires_at' => now()->addDays($days),
         ]);
 
         return $token;
@@ -116,11 +119,29 @@ class TwoFactorService
 
     public function verifyRememberToken(User $user, ?string $token): bool
     {
-        if (! $token || ! $user->two_factor_remember_token) {
+        if (! $token) {
             return false;
         }
 
-        return hash_equals($user->two_factor_remember_token, hash('sha256', $token));
+        $device = $user->rememberedDevices()
+            ->where('token_hash', hash('sha256', $token))
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (! $device) {
+            return false;
+        }
+
+        $device->update(['last_used_at' => now()]);
+
+        return true;
+    }
+
+    public function pruneExpiredRememberedDevices(): int
+    {
+        return TwoFactorRememberedDevice::query()
+            ->where('expires_at', '<=', now())
+            ->delete();
     }
 
     /**
@@ -146,8 +167,9 @@ class TwoFactorService
             'two_factor_secret' => null,
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,
-            'two_factor_remember_token' => null,
         ]);
+
+        $user->rememberedDevices()->delete();
     }
 
     public function isRateLimited(User $user): bool
