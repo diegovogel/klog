@@ -15,7 +15,7 @@ it('creates memories with memory_date spanning 400 days', function () {
     $oldestMemory = Memory::oldest('memory_date')->first();
     $newestMemory = Memory::latest('memory_date')->first();
 
-    expect((int) $oldestMemory->memory_date->diffInDays($newestMemory->memory_date))->toBe(399);
+    expect((int) round($oldestMemory->memory_date->diffInDays($newestMemory->memory_date)))->toBe(399);
 });
 
 it('creates memories with title and content from factory', function () {
