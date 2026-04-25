@@ -24,7 +24,11 @@ class ScreenshotSettingsController extends Controller
 
     public function install(): RedirectResponse
     {
-        $this->feature->markStatus('queued', 'Waiting for worker…', 'install');
+        if (! $this->feature->tryReserve('install')) {
+            return redirect()->route('settings')
+                ->withErrors(['screenshots' => 'A screenshot operation is already in progress.']);
+        }
+
         InstallScreenshotsJob::dispatch();
 
         return redirect()->route('settings')->with('success', 'Installing screenshot packages. This may take a minute.');
@@ -32,7 +36,11 @@ class ScreenshotSettingsController extends Controller
 
     public function uninstall(): RedirectResponse
     {
-        $this->feature->markStatus('queued', 'Waiting for worker…', 'uninstall');
+        if (! $this->feature->tryReserve('uninstall')) {
+            return redirect()->route('settings')
+                ->withErrors(['screenshots' => 'A screenshot operation is already in progress.']);
+        }
+
         UninstallScreenshotsJob::dispatch();
 
         return redirect()->route('settings')->with('success', 'Removing screenshot packages.');

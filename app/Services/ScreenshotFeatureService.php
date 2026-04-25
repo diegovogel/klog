@@ -57,6 +57,20 @@ class ScreenshotFeatureService
         ], now()->addHour());
     }
 
+    /**
+     * Atomically reserve the install/uninstall slot. Returns true if this
+     * caller now owns the slot; false if another operation is already
+     * queued or running.
+     */
+    public function tryReserve(string $action): bool
+    {
+        return cache()->add(
+            self::STATUS_CACHE_KEY,
+            ['state' => 'queued', 'message' => 'Waiting for worker…', 'action' => $action],
+            now()->addHour(),
+        );
+    }
+
     public function clearStatus(): void
     {
         cache()->forget(self::STATUS_CACHE_KEY);

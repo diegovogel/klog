@@ -18,19 +18,23 @@ class InstallScreenshotsJob implements ShouldQueue
 
     public function handle(ScreenshotFeatureService $feature): void
     {
+        // Snapshot the prior installed state so we know whether a failed
+        // install actually added anything we should remove.
+        $wasInstalled = $feature->isInstalled();
+
         $feature->markStatus('running', 'Installing screenshot packages…', 'install');
 
         try {
             $exit = Artisan::call('clippings:install-screenshots');
             $output = trim(Artisan::output());
         } catch (\Throwable $e) {
-            $this->rollBack($feature, 'Install threw: '.$e->getMessage());
+            $this->rollBack($feature, $wasInstalled, 'Install threw: '.$e->getMessage());
 
             return;
         }
 
         if ($exit !== 0) {
-            $this->rollBack($feature, 'Install failed:'.PHP_EOL.$output);
+            $this->rollBack($feature, $wasInstalled, 'Install failed:'.PHP_EOL.$output);
 
             return;
         }
@@ -39,12 +43,16 @@ class InstallScreenshotsJob implements ShouldQueue
         $feature->markStatus('success', 'Screenshot packages installed.', 'install');
     }
 
-    private function rollBack(ScreenshotFeatureService $feature, string $reason): void
+    private function rollBack(ScreenshotFeatureService $feature, bool $wasInstalled, string $reason): void
     {
-        try {
-            Artisan::call('clippings:uninstall-screenshots');
-        } catch (\Throwable) {
-            // best-effort rollback
+        // Only auto-uninstall when this run was the one that started installing.
+        // If packages were already present, don't strip them on a partial-retry failure.
+        if (! $wasInstalled) {
+            try {
+                Artisan::call('clippings:uninstall-screenshots');
+            } catch (\Throwable) {
+                // best-effort rollback
+            }
         }
 
         $feature->markStatus('failed', $reason, 'install');

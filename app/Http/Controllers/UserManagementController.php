@@ -44,7 +44,10 @@ class UserManagementController extends Controller
             return redirect()->route('settings')->withErrors(['role' => 'You cannot demote yourself.']);
         }
 
-        if ($user->isAdmin() && $newRole !== UserRole::ADMIN && $this->adminCount() <= 1) {
+        // Only enforce the last-admin guard when demoting an *active* admin —
+        // a deactivated admin doesn't count toward the active-admin pool, so
+        // demoting them never reduces it.
+        if ($user->isAdmin() && $user->isActive() && $newRole !== UserRole::ADMIN && $this->adminCount() <= 1) {
             return redirect()->route('settings')->withErrors(['role' => 'At least one admin must remain.']);
         }
 

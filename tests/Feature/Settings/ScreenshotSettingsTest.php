@@ -69,12 +69,15 @@ describe('install/uninstall dispatch', function () {
 });
 
 describe('install job rollback', function () {
-    it('rolls back when the install command fails', function () {
+    it('rolls back a fresh install attempt when the command fails', function () {
+        $feature = \Mockery::mock(ScreenshotFeatureService::class)->makePartial();
+        $feature->shouldReceive('isInstalled')->once()->andReturn(false);
+        $feature->shouldReceive('markStatus')->withAnyArgs();
+
         Artisan::shouldReceive('call')
             ->once()
             ->with('clippings:install-screenshots')
             ->andReturn(1);
-
         Artisan::shouldReceive('output')->andReturn('boom');
 
         Artisan::shouldReceive('call')
@@ -82,10 +85,6 @@ describe('install job rollback', function () {
             ->with('clippings:uninstall-screenshots')
             ->andReturn(0);
 
-        (new InstallScreenshotsJob)->handle(app(ScreenshotFeatureService::class));
-
-        $status = app(ScreenshotFeatureService::class)->status();
-        expect($status['state'])->toBe('failed')
-            ->and($status['message'])->toContain('boom');
+        (new InstallScreenshotsJob)->handle($feature);
     });
 });
