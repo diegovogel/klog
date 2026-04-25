@@ -48,6 +48,10 @@ class InviteController extends Controller
             abort(404);
         }
 
+        if ($invite->user?->isDeactivated()) {
+            abort(404);
+        }
+
         return $invite;
     }
 }

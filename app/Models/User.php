@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class User extends Authenticatable
@@ -92,7 +93,19 @@ class User extends Authenticatable
         DB::transaction(function () {
             $this->update(['deactivated_at' => now()]);
             $this->rememberedDevices()->delete();
+            $this->invalidateSessions();
         });
+    }
+
+    private function invalidateSessions(): void
+    {
+        if (config('session.driver') !== 'database') {
+            return;
+        }
+
+        DB::table(config('session.table', 'sessions'))
+            ->where('user_id', $this->id)
+            ->delete();
     }
 
     public function reactivate(): void
@@ -124,5 +137,18 @@ class User extends Authenticatable
     public function scopeDeactivated(Builder $query): Builder
     {
         return $query->whereNotNull('deactivated_at');
+    }
+
+    /**
+     * Whether the install has more than one user. Cached for the request
+     * (array driver is reset between tests via Laravel's app reset).
+     */
+    public static function multipleExist(): bool
+    {
+        return Cache::driver('array')->remember(
+            'users.multiple_exist',
+            60,
+            fn () => static::query()->count() > 1,
+        );
     }
 }

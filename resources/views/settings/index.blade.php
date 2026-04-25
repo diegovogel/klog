@@ -13,11 +13,13 @@
         <div class="alert alert--success">{{ session('success') }}</div>
     @endif
 
-    @if($errors->any() && ! $errors->hasBag('default'))
+    @if(collect(['invite', 'role', 'deactivate'])->contains(fn ($key) => $errors->has($key)))
         <div class="alert alert--error">
             <ul>
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
+                @foreach(['invite', 'role', 'deactivate'] as $key)
+                    @foreach($errors->get($key) as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
                 @endforeach
             </ul>
         </div>

@@ -62,7 +62,7 @@ Route::middleware('guest')->group(function () {
     Route::post('invites/{token}', [InviteController::class, 'accept'])->name('invites.accept');
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'user-active'])->group(function () {
     Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
     Route::get('two-factor/challenge', [TwoFactorChallengeController::class, 'show'])

@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'two-factor' => \App\Http\Middleware\EnsureTwoFactorChallenge::class,
             'admin' => \App\Http\Middleware\RequireAdmin::class,
+            'user-active' => \App\Http\Middleware\EnsureUserActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

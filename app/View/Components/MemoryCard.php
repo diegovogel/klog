@@ -44,7 +44,7 @@ class MemoryCard extends Component
         $this->webClippings = $memory->getWebClippings();
         $this->children = $memory->children;
         $this->tags = $memory->tags;
-        $this->showAuthor = once(fn () => User::query()->count() > 1);
+        $this->showAuthor = User::multipleExist();
     }
 
     public function render(): View
