@@ -1,7 +1,15 @@
 @props(['name', 'label', 'max' => 20])
 
+@php($acceptedFormats = \App\Enums\MimeType::labelsByMediaType())
+
 <div class="form-group">
     <label class="form-label">{{ $label }}</label>
+    <small class="form-hint">
+        Accepted formats:
+        @foreach($acceptedFormats as $type => $labels)
+            <strong>{{ ucfirst($type) }}:</strong> {{ implode(', ', $labels) }}@if(! $loop->last) <span aria-hidden="true">·</span> @endif
+        @endforeach
+    </small>
     <div data-media-upload
          data-max="{{ $max }}"
          data-upload-max-file-size="{{ config('klog.uploads.max_file_size', 500 * 1024 * 1024) }}"
