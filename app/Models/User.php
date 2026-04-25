@@ -13,6 +13,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -94,10 +95,11 @@ class User extends Authenticatable
     {
         DB::transaction(function () {
             $now = now();
-            $this->update([
+            $this->forceFill([
                 'deactivated_at' => $now,
                 'session_invalidated_at' => $now,
-            ]);
+                'remember_token' => Str::random(60),
+            ])->save();
             $this->rememberedDevices()->delete();
             $this->invalidateSessions();
         });

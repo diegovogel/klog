@@ -58,17 +58,22 @@ class ScreenshotFeatureService
     }
 
     /**
-     * Atomically reserve the install/uninstall slot. Returns true if this
-     * caller now owns the slot; false if another operation is already
-     * queued or running.
+     * Reserve the install/uninstall slot. Returns true if this caller now
+     * owns the slot; false if another operation is already queued or running.
+     * Terminal states (success / failed / idle) are overwritten so admins
+     * can re-trigger after a finished run without waiting for the cache TTL.
      */
     public function tryReserve(string $action): bool
     {
-        return cache()->add(
-            self::STATUS_CACHE_KEY,
-            ['state' => 'queued', 'message' => 'Waiting for worker…', 'action' => $action],
-            now()->addHour(),
-        );
+        $current = cache()->get(self::STATUS_CACHE_KEY);
+
+        if (is_array($current) && in_array($current['state'] ?? '', ['queued', 'running'], true)) {
+            return false;
+        }
+
+        $this->markStatus('queued', 'Waiting for worker…', $action);
+
+        return true;
     }
 
     public function clearStatus(): void
