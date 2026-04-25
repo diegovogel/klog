@@ -13,22 +13,32 @@ class MaintainerResolverService
      * Resolve the maintainer email address.
      *
      * Priority:
-     * 1. MAINTAINER_EMAIL env var
-     * 2. Previously discovered email (stored in app_settings)
+     * 1. app_settings value (Settings UI wins)
+     * 2. MAINTAINER_EMAIL env var (seed / default)
      * 3. null (caller must try users in order)
      */
     public function resolve(): ?string
     {
+        try {
+            $stored = AppSetting::getValue(self::SETTING_KEY);
+            if ($stored !== null && $stored !== '') {
+                return $stored;
+            }
+        } catch (\Throwable) {
+            // DB may not be available during early bootstrap/logging
+        }
+
         $envEmail = config('klog.maintainer_email');
         if ($envEmail !== null && $envEmail !== '') {
             return $envEmail;
         }
 
-        try {
-            return AppSetting::getValue(self::SETTING_KEY);
-        } catch (\Throwable) {
-            return null;
-        }
+        return null;
+    }
+
+    public function save(?string $email): void
+    {
+        AppSetting::setValue(self::SETTING_KEY, $email);
     }
 
     /**

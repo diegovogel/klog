@@ -29,11 +29,11 @@ describe('MaintainerResolverService', function () {
             expect($this->service->resolve())->toBeNull();
         });
 
-        it('prefers env var over stored setting', function () {
+        it('prefers stored setting over env var (UI wins)', function () {
             config()->set('klog.maintainer_email', 'env@example.com');
             AppSetting::setValue('maintainer_email', 'stored@example.com');
 
-            expect($this->service->resolve())->toBe('env@example.com');
+            expect($this->service->resolve())->toBe('stored@example.com');
         });
 
         it('treats empty string env var as unset', function () {

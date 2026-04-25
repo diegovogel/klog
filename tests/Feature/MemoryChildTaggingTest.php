@@ -145,13 +145,13 @@ describe('child tagging', function () {
             ->assertSee('Liam');
     });
 
-    it('does not show pipe separator when no children are tagged', function () {
+    it('does not show child labels when no children are tagged', function () {
         $user = User::factory()->create();
         Memory::factory()->create();
 
         $response = $this->actingAs($user)->get('/');
 
-        $response->assertDontSee('memory-card__footer-pipe', false);
+        $response->assertDontSee('memory-card__child-label', false);
     });
 
     it('restores a soft-deleted child when submitted as new_children', function () {

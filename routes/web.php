@@ -1,12 +1,17 @@
 <?php
 
+use App\Http\Controllers\AccountSettingsController;
+use App\Http\Controllers\AppSettingsController;
+use App\Http\Controllers\Auth\InviteController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\MediaController;
+use App\Http\Controllers\ScreenshotSettingsController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TwoFactorSettingsController;
 use App\Http\Controllers\UploadController;
+use App\Http\Controllers\UserManagementController;
 use App\Http\Requests\StoreMemoryRequest;
 use App\Models\Child;
 use App\Models\Memory;
@@ -52,6 +57,9 @@ Route::get('offline', fn () => view('offline'))->name('offline');
 Route::middleware('guest')->group(function () {
     Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('login', [LoginController::class, 'login']);
+
+    Route::get('invites/{token}', [InviteController::class, 'show'])->name('invites.show');
+    Route::post('invites/{token}', [InviteController::class, 'accept'])->name('invites.accept');
 });
 
 Route::middleware('auth')->group(function () {
@@ -74,7 +82,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/', function () {
             return view('memory-feed', [
-                'memories' => Memory::with('children', 'tags')->latest('memory_date')->paginate(10),
+                'memories' => Memory::with('children', 'tags', 'user')->latest('memory_date')->paginate(10),
             ]);
         });
 
@@ -143,6 +151,15 @@ Route::middleware('auth')->group(function () {
 
         Route::get('settings', [SettingsController::class, 'show'])
             ->name('settings');
+
+        // Member self-service
+        Route::patch('settings/account', [AccountSettingsController::class, 'update'])
+            ->name('settings.account.update');
+        Route::patch('settings/password', [AccountSettingsController::class, 'updatePassword'])
+            ->name('settings.password.update');
+        Route::post('settings/log-out-other-devices', [AccountSettingsController::class, 'logOutOtherDevices'])
+            ->name('settings.log-out-other-devices');
+
         Route::post('settings/two-factor/enable', [TwoFactorSettingsController::class, 'enable'])
             ->name('two-factor.enable');
         Route::post('settings/two-factor/disable', [TwoFactorSettingsController::class, 'disable'])
@@ -153,5 +170,33 @@ Route::middleware('auth')->group(function () {
             ->name('two-factor.authenticator.setup');
         Route::post('settings/two-factor/authenticator/confirm', [TwoFactorSettingsController::class, 'confirmAuthenticator'])
             ->name('two-factor.authenticator.confirm');
+
+        // Admin-only
+        Route::middleware('admin')->group(function () {
+            Route::patch('settings/maintainer-email', [AppSettingsController::class, 'updateMaintainerEmail'])
+                ->name('settings.maintainer-email.update');
+            Route::patch('settings/two-factor-expiration', [AppSettingsController::class, 'updateTwoFactorExpiration'])
+                ->name('settings.two-factor-expiration.update');
+
+            Route::patch('settings/screenshots', [ScreenshotSettingsController::class, 'updateFlag'])
+                ->name('settings.screenshots.update');
+            Route::post('settings/screenshots/install', [ScreenshotSettingsController::class, 'install'])
+                ->name('settings.screenshots.install');
+            Route::post('settings/screenshots/uninstall', [ScreenshotSettingsController::class, 'uninstall'])
+                ->name('settings.screenshots.uninstall');
+            Route::get('settings/screenshots/status', [ScreenshotSettingsController::class, 'status'])
+                ->name('settings.screenshots.status');
+
+            Route::post('settings/users/invite', [UserManagementController::class, 'invite'])
+                ->name('settings.users.invite');
+            Route::post('settings/users/{user}/resend-invite', [UserManagementController::class, 'resendInvite'])
+                ->name('settings.users.resend-invite');
+            Route::patch('settings/users/{user}/role', [UserManagementController::class, 'updateRole'])
+                ->name('settings.users.role.update');
+            Route::post('settings/users/{user}/deactivate', [UserManagementController::class, 'deactivate'])
+                ->name('settings.users.deactivate');
+            Route::post('settings/users/{user}/reactivate', [UserManagementController::class, 'reactivate'])
+                ->name('settings.users.reactivate');
+        });
     });
 });

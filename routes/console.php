@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\UploadSession;
+use App\Services\ScreenshotFeatureService;
 use App\Services\TwoFactorService;
+use App\Services\UserInviteService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -14,7 +16,11 @@ Artisan::command('inspire', function () {
 Schedule::command('clippings:fetch-content')->dailyAt('01:00');
 
 if (class_exists(\Spatie\Browsershot\Browsershot::class)) {
-    Schedule::command('clippings:screenshot')->dailyAt('02:00');
+    Schedule::call(function () {
+        if (app(ScreenshotFeatureService::class)->isEnabled()) {
+            Artisan::call('clippings:screenshot');
+        }
+    })->dailyAt('02:00');
 }
 
 // Clean up orphaned and expired upload sessions
@@ -38,3 +44,7 @@ Schedule::call(function () {
 Schedule::call(function () {
     app(TwoFactorService::class)->pruneExpiredRememberedDevices();
 })->dailyAt('03:30');
+
+Schedule::call(function () {
+    app(UserInviteService::class)->purgeExpired();
+})->dailyAt('04:00');

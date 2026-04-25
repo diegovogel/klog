@@ -5,10 +5,13 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\TwoFactorMethod;
 use App\Enums\UserRole;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 
 class User extends Authenticatable
 {
@@ -16,8 +19,6 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
-     * The attributes that are mass assignable.
-     *
      * @var list<string>
      */
     protected $fillable = [
@@ -25,6 +26,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'deactivated_at',
         'two_factor_method',
         'two_factor_secret',
         'two_factor_recovery_codes',
@@ -32,8 +34,6 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
      * @var list<string>
      */
     protected $hidden = [
@@ -49,6 +49,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
+            'deactivated_at' => 'datetime',
             'two_factor_method' => TwoFactorMethod::class,
             'two_factor_secret' => 'encrypted',
             'two_factor_recovery_codes' => 'encrypted:array',
@@ -61,9 +62,42 @@ class User extends Authenticatable
         return $this->hasMany(TwoFactorRememberedDevice::class);
     }
 
+    public function memories(): HasMany
+    {
+        return $this->hasMany(Memory::class);
+    }
+
+    public function invite(): HasOne
+    {
+        return $this->hasOne(UserInvite::class);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === UserRole::ADMIN;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->deactivated_at === null;
+    }
+
+    public function isDeactivated(): bool
+    {
+        return ! $this->isActive();
+    }
+
+    public function deactivate(): void
+    {
+        DB::transaction(function () {
+            $this->update(['deactivated_at' => now()]);
+            $this->rememberedDevices()->delete();
+        });
+    }
+
+    public function reactivate(): void
+    {
+        $this->update(['deactivated_at' => null]);
     }
 
     public function hasTwoFactorEnabled(): bool
@@ -75,5 +109,20 @@ class User extends Authenticatable
     public function usesTwoFactorMethod(TwoFactorMethod $method): bool
     {
         return $this->two_factor_method === $method;
+    }
+
+    public function unusedRecoveryCodeCount(): int
+    {
+        return count($this->two_factor_recovery_codes ?? []);
+    }
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->whereNull('deactivated_at');
+    }
+
+    public function scopeDeactivated(Builder $query): Builder
+    {
+        return $query->whereNotNull('deactivated_at');
     }
 }

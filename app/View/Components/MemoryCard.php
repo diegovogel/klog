@@ -6,6 +6,7 @@ use App\Models\Child;
 use App\Models\Media;
 use App\Models\Memory;
 use App\Models\Tag;
+use App\Models\User;
 use App\Models\WebClipping;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -31,6 +32,8 @@ class MemoryCard extends Component
     /** @var Collection<int, Tag> */
     public Collection $tags;
 
+    public bool $showAuthor;
+
     public function __construct(public Memory $memory)
     {
         $this->media = $memory->getMedia();
@@ -41,6 +44,7 @@ class MemoryCard extends Component
         $this->webClippings = $memory->getWebClippings();
         $this->children = $memory->children;
         $this->tags = $memory->tags;
+        $this->showAuthor = once(fn () => User::query()->count() > 1);
     }
 
     public function render(): View
@@ -54,6 +58,7 @@ class MemoryCard extends Component
             'webClippings' => $this->webClippings,
             'children' => $this->children,
             'tags' => $this->tags,
+            'showAuthor' => $this->showAuthor,
         ]);
     }
 }

@@ -87,6 +87,10 @@
     <footer class="memory-card__footer">
         <div class="memory-card__footer-left">
             <time datetime="{{ $memory->memory_date->toDateString() }}">{{ $memory->memory_date->format('M j, Y') }}</time>
+            @if($showAuthor && $memory->user)
+                <span class="memory-card__footer-pipe">|</span>
+                <span class="memory-card__author">by {{ $memory->user->name }}</span>
+            @endif
             @if($children->isNotEmpty())
                 <span class="memory-card__footer-pipe">|</span>
                 @foreach($children as $child)

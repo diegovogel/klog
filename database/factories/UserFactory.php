@@ -53,6 +53,13 @@ class UserFactory extends Factory
         ]);
     }
 
+    public function deactivated(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'deactivated_at' => now(),
+        ]);
+    }
+
     public function withTwoFactor(TwoFactorMethod $method = TwoFactorMethod::EMAIL): static
     {
         $codes = TwoFactorService::generateRecoveryCodes();
