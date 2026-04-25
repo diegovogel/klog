@@ -54,9 +54,13 @@ class UserInviteService
             throw new \RuntimeException('User has already accepted their invite.');
         }
 
-        $existing?->delete();
+        // Wrap the swap-and-send in a transaction so a mail failure rolls
+        // the delete back and the user keeps their existing valid link.
+        return DB::transaction(function () use ($existing, $user) {
+            $existing?->delete();
 
-        return $this->createInviteFor($user);
+            return $this->createInviteFor($user);
+        });
     }
 
     public function accept(UserInvite $invite, string $name, string $password): User

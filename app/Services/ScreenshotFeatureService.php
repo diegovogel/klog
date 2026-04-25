@@ -62,18 +62,31 @@ class ScreenshotFeatureService
      * owns the slot; false if another operation is already queued or running.
      * Terminal states (success / failed / idle) are overwritten so admins
      * can re-trigger after a finished run without waiting for the cache TTL.
+     *
+     * Atomicity comes from a short-lived lock around the read+write so two
+     * concurrent admins can't both see an idle state and both reserve.
      */
     public function tryReserve(string $action): bool
     {
-        $current = cache()->get(self::STATUS_CACHE_KEY);
+        $lock = cache()->lock(self::STATUS_CACHE_KEY.'.lock', 5);
 
-        if (is_array($current) && in_array($current['state'] ?? '', ['queued', 'running'], true)) {
+        if (! $lock->get()) {
             return false;
         }
 
-        $this->markStatus('queued', 'Waiting for worker…', $action);
+        try {
+            $current = cache()->get(self::STATUS_CACHE_KEY);
 
-        return true;
+            if (is_array($current) && in_array($current['state'] ?? '', ['queued', 'running'], true)) {
+                return false;
+            }
+
+            $this->markStatus('queued', 'Waiting for worker…', $action);
+
+            return true;
+        } finally {
+            $lock->release();
+        }
     }
 
     public function clearStatus(): void

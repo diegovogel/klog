@@ -39,9 +39,11 @@ class AccountSettingsController extends Controller
 
         // Backend-agnostic invalidation: bump the per-user session epoch and
         // re-stamp the current session so EnsureUserActive logs out anything older.
+        // Stamp the current session +1s after the epoch so the inclusive comparison
+        // in the middleware (which treats equal seconds as stale) doesn't kick us out.
         $now = now();
         $user->update(['session_invalidated_at' => $now]);
-        $request->session()->put('auth.created_at', $now->getTimestamp());
+        $request->session()->put('auth.created_at', $now->copy()->addSecond()->getTimestamp());
 
         $currentToken = $request->cookie('two_factor_remember');
         $query = $user->rememberedDevices();

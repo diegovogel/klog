@@ -38,7 +38,10 @@ class EnsureUserActive
 
         $createdAt = $request->session()->get('auth.created_at');
 
+        // Whole-second timestamps mean a session created in the same second
+        // as the invalidation event would otherwise survive. Treat equals
+        // as stale so we never under-invalidate.
         return $createdAt === null
-            || $createdAt < $user->session_invalidated_at->getTimestamp();
+            || $createdAt <= $user->session_invalidated_at->getTimestamp();
     }
 }
