@@ -13,7 +13,11 @@ class EnsureUserActive
     {
         $user = $request->user();
 
-        if ($user && $user->isDeactivated()) {
+        if (! $user) {
+            return $next($request);
+        }
+
+        if ($user->isDeactivated() || $this->sessionPredatesInvalidation($user, $request)) {
             Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
@@ -24,5 +28,17 @@ class EnsureUserActive
         }
 
         return $next($request);
+    }
+
+    private function sessionPredatesInvalidation(\App\Models\User $user, Request $request): bool
+    {
+        if ($user->session_invalidated_at === null) {
+            return false;
+        }
+
+        $createdAt = $request->session()->get('auth.created_at');
+
+        return $createdAt === null
+            || $createdAt < $user->session_invalidated_at->getTimestamp();
     }
 }

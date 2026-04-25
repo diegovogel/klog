@@ -34,10 +34,16 @@ class AccountSettingsController extends Controller
     {
         Auth::logoutOtherDevices($request->validated('password'));
 
-        $request->user()->rememberedDevices()->delete();
+        $currentToken = $request->cookie('two_factor_remember');
+        $query = $request->user()->rememberedDevices();
+
+        if (is_string($currentToken) && $currentToken !== '') {
+            $query->where('token_hash', '!=', hash('sha256', $currentToken));
+        }
+
+        $query->delete();
 
         return redirect()->route('settings')
-            ->with('success', 'Other devices have been logged out.')
-            ->withCookie(cookie()->forget('two_factor_remember'));
+            ->with('success', 'Other devices have been logged out.');
     }
 }

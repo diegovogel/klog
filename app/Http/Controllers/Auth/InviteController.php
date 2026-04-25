@@ -36,6 +36,7 @@ class InviteController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+        $request->session()->put('auth.created_at', now()->getTimestamp());
 
         return redirect('/')->with('success', 'Welcome to '.config('app.name').'.');
     }

@@ -35,6 +35,7 @@ class UninstallScreenshotsJob implements ShouldQueue
             return;
         }
 
+        $feature->setEnabled(false);
         $feature->markStatus('success', 'Screenshot packages removed.', 'uninstall');
     }
 }

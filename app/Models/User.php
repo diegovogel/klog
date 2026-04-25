@@ -28,6 +28,7 @@ class User extends Authenticatable
         'password',
         'role',
         'deactivated_at',
+        'session_invalidated_at',
         'two_factor_method',
         'two_factor_secret',
         'two_factor_recovery_codes',
@@ -51,6 +52,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'role' => UserRole::class,
             'deactivated_at' => 'datetime',
+            'session_invalidated_at' => 'datetime',
             'two_factor_method' => TwoFactorMethod::class,
             'two_factor_secret' => 'encrypted',
             'two_factor_recovery_codes' => 'encrypted:array',
@@ -91,7 +93,11 @@ class User extends Authenticatable
     public function deactivate(): void
     {
         DB::transaction(function () {
-            $this->update(['deactivated_at' => now()]);
+            $now = now();
+            $this->update([
+                'deactivated_at' => $now,
+                'session_invalidated_at' => $now,
+            ]);
             $this->rememberedDevices()->delete();
             $this->invalidateSessions();
         });

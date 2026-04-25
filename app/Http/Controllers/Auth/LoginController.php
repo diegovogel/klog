@@ -21,6 +21,7 @@ class LoginController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+        $request->session()->put('auth.created_at', now()->getTimestamp());
 
         return redirect()->intended('/');
     }
