@@ -36,7 +36,7 @@ describe('invite', function () {
             'name' => 'Dup',
             'email' => 'dup@example.com',
             'role' => UserRole::MEMBER->value,
-        ])->assertSessionHasErrors('email');
+        ])->assertSessionHasErrors('email', null, 'invite');
     });
 
     it('forbids non-admins', function () {

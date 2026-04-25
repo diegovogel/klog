@@ -2,14 +2,15 @@
     <h2 class="settings-section__title">Users</h2>
 
     <h3 class="settings-section__subtitle">Invite a new user</h3>
+    @php($inviteFailed = $errors->invite->any())
     <form method="POST" action="{{ route('settings.users.invite') }}">
         @csrf
 
         <div class="form-group">
             <label for="invite-name" class="form-label">Name</label>
             <input id="invite-name" name="name" type="text" class="form-input"
-                   value="{{ old('name') }}" required>
-            @error('name')
+                   value="{{ $inviteFailed ? old('name') : '' }}" required>
+            @error('name', 'invite')
             <p class="form-error">{{ $message }}</p>
             @enderror
         </div>
@@ -17,8 +18,8 @@
         <div class="form-group">
             <label for="invite-email" class="form-label">Email</label>
             <input id="invite-email" name="email" type="email" class="form-input"
-                   value="{{ old('email') }}" required>
-            @error('email')
+                   value="{{ $inviteFailed ? old('email') : '' }}" required>
+            @error('email', 'invite')
             <p class="form-error">{{ $message }}</p>
             @enderror
         </div>
@@ -27,12 +28,12 @@
             <label for="invite-role" class="form-label">Role</label>
             <select id="invite-role" name="role" class="form-input">
                 @foreach(\App\Enums\UserRole::cases() as $role)
-                    <option value="{{ $role->value }}" {{ old('role') === $role->value ? 'selected' : '' }}>
+                    <option value="{{ $role->value }}" {{ $inviteFailed && old('role') === $role->value ? 'selected' : '' }}>
                         {{ ucfirst($role->value) }}
                     </option>
                 @endforeach
             </select>
-            @error('role')
+            @error('role', 'invite')
             <p class="form-error">{{ $message }}</p>
             @enderror
         </div>

@@ -1,6 +1,8 @@
 <section class="settings-section">
     <h2 class="settings-section__title">Account</h2>
 
+    @php($accountFailed = $errors->account->any())
+
     <form method="POST" action="{{ route('settings.account.update') }}">
         @csrf
         @method('PATCH')
@@ -8,8 +10,8 @@
         <div class="form-group">
             <label for="account-name" class="form-label">Name</label>
             <input id="account-name" name="name" type="text" class="form-input"
-                   value="{{ old('name', $user->name) }}" required>
-            @error('name')
+                   value="{{ $accountFailed ? old('name') : $user->name }}" required>
+            @error('name', 'account')
             <p class="form-error">{{ $message }}</p>
             @enderror
         </div>
@@ -17,8 +19,8 @@
         <div class="form-group">
             <label for="account-email" class="form-label">Email</label>
             <input id="account-email" name="email" type="email" class="form-input"
-                   value="{{ old('email', $user->email) }}" required>
-            @error('email')
+                   value="{{ $accountFailed ? old('email') : $user->email }}" required>
+            @error('email', 'account')
             <p class="form-error">{{ $message }}</p>
             @enderror
         </div>
@@ -29,7 +31,7 @@
             </label>
             <input id="account-current-password" name="current_password" type="password"
                    class="form-input" autocomplete="current-password">
-            @error('current_password')
+            @error('current_password', 'account')
             <p class="form-error">{{ $message }}</p>
             @enderror
         </div>
@@ -49,7 +51,7 @@
             <label for="password-current" class="form-label">Current password</label>
             <input id="password-current" name="current_password" type="password"
                    class="form-input" autocomplete="current-password" required>
-            @error('current_password', 'default')
+            @error('current_password', 'password')
             <p class="form-error">{{ $message }}</p>
             @enderror
         </div>
@@ -58,7 +60,7 @@
             <label for="password-new" class="form-label">New password</label>
             <input id="password-new" name="password" type="password"
                    class="form-input" autocomplete="new-password" required>
-            @error('password')
+            @error('password', 'password')
             <p class="form-error">{{ $message }}</p>
             @enderror
         </div>
@@ -84,7 +86,7 @@
             <label for="logout-others-password" class="form-label">Current password</label>
             <input id="logout-others-password" name="password" type="password"
                    class="form-input" autocomplete="current-password" required>
-            @error('password')
+            @error('password', 'logout_others')
             <p class="form-error">{{ $message }}</p>
             @enderror
         </div>

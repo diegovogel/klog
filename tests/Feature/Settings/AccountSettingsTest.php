@@ -21,7 +21,7 @@ describe('account update', function () {
         $this->patch(route('settings.account.update'), [
             'name' => $this->user->name,
             'email' => 'new@example.com',
-        ])->assertSessionHasErrors('current_password');
+        ])->assertSessionHasErrors('current_password', null, 'account');
 
         expect($this->user->fresh()->email)->not->toBe('new@example.com');
     });
@@ -43,7 +43,7 @@ describe('account update', function () {
             'name' => $this->user->name,
             'email' => 'taken@example.com',
             'current_password' => 'password',
-        ])->assertSessionHasErrors('email');
+        ])->assertSessionHasErrors('email', null, 'account');
     });
 });
 
@@ -63,7 +63,7 @@ describe('password update', function () {
             'current_password' => 'wrong-pass',
             'password' => 'new-secret-1234',
             'password_confirmation' => 'new-secret-1234',
-        ])->assertSessionHasErrors('current_password');
+        ])->assertSessionHasErrors('current_password', null, 'password');
     });
 
     it('rejects mismatched confirmation', function () {
@@ -71,7 +71,7 @@ describe('password update', function () {
             'current_password' => 'password',
             'password' => 'new-secret-1234',
             'password_confirmation' => 'different',
-        ])->assertSessionHasErrors('password');
+        ])->assertSessionHasErrors('password', null, 'password');
     });
 });
 
@@ -79,7 +79,7 @@ describe('log out other devices', function () {
     it('requires current password', function () {
         $this->post(route('settings.log-out-other-devices'), [
             'password' => 'wrong',
-        ])->assertSessionHasErrors('password');
+        ])->assertSessionHasErrors('password', null, 'logout_others');
     });
 
     it('clears remembered devices on success', function () {

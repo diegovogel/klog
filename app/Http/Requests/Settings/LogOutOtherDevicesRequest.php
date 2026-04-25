@@ -6,6 +6,8 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class LogOutOtherDevicesRequest extends FormRequest
 {
+    protected $errorBag = 'logout_others';
+
     public function authorize(): bool
     {
         return $this->user() !== null;

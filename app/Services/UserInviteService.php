@@ -44,6 +44,10 @@ class UserInviteService
      */
     public function resend(User $user): UserInvite
     {
+        if ($user->isDeactivated()) {
+            throw new \RuntimeException('Reactivate the user before resending their invite.');
+        }
+
         $existing = $user->invite;
 
         if ($existing && $existing->isAccepted()) {

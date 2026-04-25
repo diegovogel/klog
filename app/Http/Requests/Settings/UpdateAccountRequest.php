@@ -7,6 +7,8 @@ use Illuminate\Validation\Rule;
 
 class UpdateAccountRequest extends FormRequest
 {
+    protected $errorBag = 'account';
+
     public function authorize(): bool
     {
         return $this->user() !== null;

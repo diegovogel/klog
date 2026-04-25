@@ -8,6 +8,8 @@ use Illuminate\Validation\Rule;
 
 class InviteUserRequest extends FormRequest
 {
+    protected $errorBag = 'invite';
+
     public function authorize(): bool
     {
         return true;
