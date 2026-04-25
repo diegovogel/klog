@@ -26,9 +26,10 @@
 
         <div class="form-group">
             <label for="invite-role" class="form-label">Role</label>
+            @php($selectedRole = $inviteFailed ? old('role') : \App\Enums\UserRole::MEMBER->value)
             <select id="invite-role" name="role" class="form-input">
                 @foreach(\App\Enums\UserRole::cases() as $role)
-                    <option value="{{ $role->value }}" {{ $inviteFailed && old('role') === $role->value ? 'selected' : '' }}>
+                    <option value="{{ $role->value }}" {{ $selectedRole === $role->value ? 'selected' : '' }}>
                         {{ ucfirst($role->value) }}
                     </option>
                 @endforeach

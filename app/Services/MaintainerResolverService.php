@@ -49,7 +49,7 @@ class MaintainerResolverService
     public function getUserEmailsInOrder(): array
     {
         try {
-            return User::query()->orderBy('id')->pluck('email')->all();
+            return User::query()->active()->orderBy('id')->pluck('email')->all();
         } catch (\Throwable) {
             return [];
         }

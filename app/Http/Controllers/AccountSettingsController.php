@@ -32,10 +32,19 @@ class AccountSettingsController extends Controller
 
     public function logOutOtherDevices(LogOutOtherDevicesRequest $request): RedirectResponse
     {
+        $user = $request->user();
+
+        // Rotates the user's remember_token and (with AuthenticateSession) password hash.
         Auth::logoutOtherDevices($request->validated('password'));
 
+        // Backend-agnostic invalidation: bump the per-user session epoch and
+        // re-stamp the current session so EnsureUserActive logs out anything older.
+        $now = now();
+        $user->update(['session_invalidated_at' => $now]);
+        $request->session()->put('auth.created_at', $now->getTimestamp());
+
         $currentToken = $request->cookie('two_factor_remember');
-        $query = $request->user()->rememberedDevices();
+        $query = $user->rememberedDevices();
 
         if (is_string($currentToken) && $currentToken !== '') {
             $query->where('token_hash', '!=', hash('sha256', $currentToken));
