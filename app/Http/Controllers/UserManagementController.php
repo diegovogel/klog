@@ -17,11 +17,18 @@ class UserManagementController extends Controller
 
     public function invite(InviteUserRequest $request): RedirectResponse
     {
-        $this->invites->invite([
-            'name' => $request->validated('name'),
-            'email' => $request->validated('email'),
-            'role' => UserRole::from($request->validated('role')),
-        ]);
+        try {
+            $this->invites->invite([
+                'name' => $request->validated('name'),
+                'email' => $request->validated('email'),
+                'role' => UserRole::from($request->validated('role')),
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()->route('settings')
+                ->withErrors(['invite' => 'Could not send the invitation. Check the mail configuration and try again.']);
+        }
 
         return redirect()->route('settings')->with('success', 'Invitation sent.');
     }

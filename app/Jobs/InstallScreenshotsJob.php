@@ -39,7 +39,10 @@ class InstallScreenshotsJob implements ShouldQueue
             return;
         }
 
-        $feature->setEnabled(true);
+        // Don't force-enable: if the admin toggled the flag while this job
+        // was in flight, that decision wins. ScreenshotFeatureService::isEnabled()
+        // defaults to true when no value is stored, so a true first-time
+        // install still ends up enabled.
         $feature->markStatus('success', 'Screenshot packages installed.', 'install');
     }
 
