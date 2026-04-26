@@ -19,7 +19,15 @@ class ScreenshotFeatureService
 
     public function isInstalled(): bool
     {
-        return app(ScreenshotService::class)->isAvailable();
+        return app(ScreenshotService::class)->isAvailable() && $this->puppeteerInstalled();
+    }
+
+    private function puppeteerInstalled(): bool
+    {
+        // Browsershot needs `node_modules/puppeteer` at runtime — having only
+        // the PHP package present (or a `puppeteer` line in package.json with
+        // no installed node_modules) doesn't make the toolchain functional.
+        return is_dir(base_path('node_modules/puppeteer'));
     }
 
     public function isEnabled(): bool
