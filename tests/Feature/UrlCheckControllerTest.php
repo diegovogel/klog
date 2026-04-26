@@ -26,15 +26,15 @@ describe('url check (authenticated)', function () {
             ->assertExactJson(['ok' => true, 'status' => 200, 'reason' => null]);
     });
 
-    it('reports unreachable for a 3xx response and does not follow the redirect', function () {
-        Http::fake(['*' => Http::response('', 302)]);
+    it('follows redirects and reports the final status', function () {
+        Http::fake([
+            'first.example/*' => Http::response('', 301, ['Location' => 'https://second.example/final']),
+            'second.example/*' => Http::response('', 200),
+        ]);
 
-        $this->getJson(route('url-check', ['url' => 'https://example.com']))
+        $this->getJson(route('url-check', ['url' => 'https://first.example/']))
             ->assertOk()
-            ->assertExactJson(['ok' => false, 'status' => 302, 'reason' => 'unreachable']);
-
-        Http::assertSent(fn ($request) => $request->method() === 'HEAD');
-        Http::assertSentCount(1);
+            ->assertExactJson(['ok' => true, 'status' => 200, 'reason' => null]);
     });
 
     it('reports auth reason for 401', function () {
@@ -194,5 +194,54 @@ describe('url check (SSRF protection)', function () {
         $this->getJson(route('url-check', ['url' => 'http://1.1.1.1/']))
             ->assertOk()
             ->assertExactJson(['ok' => true, 'status' => 200, 'reason' => null]);
+    });
+
+    it('accepts public IPv6 literal URLs', function () {
+        Http::fake(['*' => Http::response('', 200)]);
+
+        $this->getJson(route('url-check', ['url' => 'http://[2606:4700:4700::1111]/']))
+            ->assertOk()
+            ->assertExactJson(['ok' => true, 'status' => 200, 'reason' => null]);
+    });
+
+    it('blocks redirects to non-public hosts', function () {
+        $this->mock(HostValidator::class, function ($mock) {
+            $mock->shouldReceive('resolvePublic')
+                ->with('first.example')
+                ->andReturn(['203.0.113.10']);
+            $mock->shouldReceive('resolvePublic')
+                ->with('internal.local')
+                ->andReturn(null);
+        });
+
+        Http::fake([
+            'first.example/*' => Http::response('', 302, ['Location' => 'http://internal.local/']),
+        ]);
+
+        $this->getJson(route('url-check', ['url' => 'http://first.example/']))
+            ->assertOk()
+            ->assertExactJson(['ok' => false, 'status' => 0, 'reason' => 'unreachable']);
+    });
+});
+
+describe('HostValidator::curlResolveEntries', function () {
+    it('formats IPv4 host:port:ip entries', function () {
+        expect(\App\Services\HostValidator::curlResolveEntries('example.com', 443, ['1.2.3.4', '1.2.3.5']))
+            ->toBe(['example.com:443:1.2.3.4', 'example.com:443:1.2.3.5']);
+    });
+
+    it('brackets IPv6 hosts so cURL can parse the entry', function () {
+        expect(\App\Services\HostValidator::curlResolveEntries('[2606:4700:4700::1111]', 80, ['2606:4700:4700::1111']))
+            ->toBe(['[2606:4700:4700::1111]:80:2606:4700:4700::1111']);
+    });
+
+    it('brackets bare IPv6 hosts too', function () {
+        expect(\App\Services\HostValidator::curlResolveEntries('::1', 80, ['::1']))
+            ->toBe(['[::1]:80:::1']);
+    });
+
+    it('does not bracket IPv4 hosts', function () {
+        expect(\App\Services\HostValidator::curlResolveEntries('1.1.1.1', 80, ['1.1.1.1']))
+            ->toBe(['1.1.1.1:80:1.1.1.1']);
     });
 });

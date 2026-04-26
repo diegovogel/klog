@@ -82,16 +82,25 @@ class UrlCheckController extends Controller
         }
 
         $port = $parts['port'] ?? ($scheme === 'https' ? 443 : 80);
-        $resolveEntries = array_map(
-            fn (string $ip) => sprintf('%s:%d:%s', trim($host, '[]'), $port, $ip),
-            $ips,
-        );
+        $resolveEntries = HostValidator::curlResolveEntries($host, $port, $ips);
+
+        $hostValidator = $this->hostValidator;
 
         return Http::timeout(self::TIMEOUT)
             ->connectTimeout(self::CONNECT_TIMEOUT)
             ->withUserAgent('Klog/1.0 (URL check)')
             ->withOptions([
-                'allow_redirects' => false,
+                'allow_redirects' => [
+                    'max' => 5,
+                    'strict' => false,
+                    'referer' => false,
+                    'protocols' => ['http', 'https'],
+                    'on_redirect' => function ($request, $response, $uri) use ($hostValidator) {
+                        if ($hostValidator->resolvePublic($uri->getHost()) === null) {
+                            throw new \RuntimeException('Redirect to non-public host blocked');
+                        }
+                    },
+                ],
                 'curl' => [CURLOPT_RESOLVE => $resolveEntries],
             ]);
     }

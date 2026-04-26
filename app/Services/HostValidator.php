@@ -38,6 +38,27 @@ class HostValidator
         return $ips;
     }
 
+    /**
+     * Format `CURLOPT_RESOLVE` entries that pin the given `host:port` to the
+     * given IPs. Hosts that are IPv6 literals are wrapped in brackets so cURL
+     * can parse the entry.
+     *
+     * @param  array<int, string>  $ips
+     * @return array<int, string>
+     */
+    public static function curlResolveEntries(string $host, int $port, array $ips): array
+    {
+        $bareHost = trim($host, '[]');
+        $hostForCurl = filter_var($bareHost, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)
+            ? "[{$bareHost}]"
+            : $bareHost;
+
+        return array_map(
+            fn (string $ip) => sprintf('%s:%d:%s', $hostForCurl, $port, $ip),
+            $ips,
+        );
+    }
+
     private function isPublicIp(string $ip): bool
     {
         return (bool) filter_var(
