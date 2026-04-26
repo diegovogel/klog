@@ -10,6 +10,8 @@ class ScreenshotFeatureService
 
     public const STATUS_CACHE_KEY = 'screenshots.install.status';
 
+    public const STUCK_QUEUED_AFTER_SECONDS = 60;
+
     public function isInstalled(): bool
     {
         return app(ScreenshotService::class)->isAvailable();
@@ -54,6 +56,7 @@ class ScreenshotFeatureService
             'state' => $state,
             'message' => $message,
             'action' => $action,
+            'state_changed_at' => time(),
         ], now()->addHour());
     }
 
@@ -78,7 +81,14 @@ class ScreenshotFeatureService
             $current = cache()->get(self::STATUS_CACHE_KEY);
 
             if (is_array($current) && in_array($current['state'] ?? '', ['queued', 'running'], true)) {
-                return false;
+                // If the slot has been stuck in `queued` for too long (worker
+                // never picked it up, queue is down, etc.), allow re-reservation
+                // so admins aren't locked out for the full cache TTL.
+                if ($this->isStuckInQueued($current)) {
+                    // fall through and re-reserve
+                } else {
+                    return false;
+                }
             }
 
             $this->markStatus('queued', 'Waiting for worker…', $action);
@@ -87,6 +97,21 @@ class ScreenshotFeatureService
         } finally {
             $lock->release();
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $status
+     */
+    private function isStuckInQueued(array $status): bool
+    {
+        if (($status['state'] ?? null) !== 'queued') {
+            return false;
+        }
+
+        $changedAt = $status['state_changed_at'] ?? null;
+
+        return is_int($changedAt)
+            && (time() - $changedAt) > self::STUCK_QUEUED_AFTER_SECONDS;
     }
 
     public function clearStatus(): void

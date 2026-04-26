@@ -50,14 +50,22 @@ class UserInviteService
 
         $existing = $user->invite;
 
-        if ($existing && $existing->isAccepted()) {
+        // Resend only applies to users in an invited-but-not-accepted state.
+        // Users created outside the invite system (e.g., via `user:create`)
+        // must not get a setup link via this endpoint — that would be a
+        // de-facto password reset.
+        if ($existing === null) {
+            throw new \RuntimeException('This user was not invited; cannot resend an invite.');
+        }
+
+        if ($existing->isAccepted()) {
             throw new \RuntimeException('User has already accepted their invite.');
         }
 
         // Wrap the swap-and-send in a transaction so a mail failure rolls
         // the delete back and the user keeps their existing valid link.
         return DB::transaction(function () use ($existing, $user) {
-            $existing?->delete();
+            $existing->delete();
 
             return $this->createInviteFor($user);
         });
