@@ -7,6 +7,7 @@ use App\Http\Requests\Settings\UpdateAccountRequest;
 use App\Http\Requests\Settings\UpdatePasswordRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class AccountSettingsController extends Controller
 {
@@ -23,11 +24,27 @@ class AccountSettingsController extends Controller
 
     public function updatePassword(UpdatePasswordRequest $request): RedirectResponse
     {
-        $request->user()->forceFill([
-            'password' => $request->validated('password'),
-        ])->save();
+        $user = $request->user();
+        $now = now();
 
-        return redirect()->route('settings')->with('success', 'Password updated.');
+        // Rotate credentials and bump the per-user session epoch so any other
+        // active session (or stolen remember-me cookie) gets kicked out on
+        // its next request. Wipe remembered 2FA devices so the next 2FA-gated
+        // access also re-challenges.
+        $user->forceFill([
+            'password' => $request->validated('password'),
+            'session_invalidated_at' => $now,
+            'remember_token' => Str::random(60),
+        ])->save();
+        $user->rememberedDevices()->delete();
+
+        // Stamp the current session +1s so the inclusive epoch comparison
+        // in EnsureUserActive doesn't kick the actor out as well.
+        $request->session()->put('auth.created_at', $now->copy()->addSecond()->getTimestamp());
+
+        return redirect()->route('settings')
+            ->with('success', 'Password updated.')
+            ->withCookie(cookie()->forget('two_factor_remember'));
     }
 
     public function logOutOtherDevices(LogOutOtherDevicesRequest $request): RedirectResponse

@@ -12,6 +12,11 @@ class ScreenshotFeatureService
 
     public const STUCK_QUEUED_AFTER_SECONDS = 60;
 
+    // The install/uninstall job sets timeout=600s. Treat anything older
+    // than 1.5x the worker timeout as a dead worker so retries aren't
+    // blocked for the full cache TTL.
+    public const STUCK_RUNNING_AFTER_SECONDS = 900;
+
     public function isInstalled(): bool
     {
         return app(ScreenshotService::class)->isAvailable();
@@ -81,10 +86,10 @@ class ScreenshotFeatureService
             $current = cache()->get(self::STATUS_CACHE_KEY);
 
             if (is_array($current) && in_array($current['state'] ?? '', ['queued', 'running'], true)) {
-                // If the slot has been stuck in `queued` for too long (worker
-                // never picked it up, queue is down, etc.), allow re-reservation
+                // If the slot has been stuck for too long — worker never
+                // picked it up, or worker died mid-run — allow re-reservation
                 // so admins aren't locked out for the full cache TTL.
-                if ($this->isStuckInQueued($current)) {
+                if ($this->isStuck($current)) {
                     // fall through and re-reserve
                 } else {
                     return false;
@@ -102,16 +107,22 @@ class ScreenshotFeatureService
     /**
      * @param  array<string, mixed>  $status
      */
-    private function isStuckInQueued(array $status): bool
+    private function isStuck(array $status): bool
     {
-        if (($status['state'] ?? null) !== 'queued') {
+        $state = $status['state'] ?? null;
+        $changedAt = $status['state_changed_at'] ?? null;
+
+        if (! is_int($changedAt)) {
             return false;
         }
 
-        $changedAt = $status['state_changed_at'] ?? null;
+        $age = time() - $changedAt;
 
-        return is_int($changedAt)
-            && (time() - $changedAt) > self::STUCK_QUEUED_AFTER_SECONDS;
+        return match ($state) {
+            'queued' => $age > self::STUCK_QUEUED_AFTER_SECONDS,
+            'running' => $age > self::STUCK_RUNNING_AFTER_SECONDS,
+            default => false,
+        };
     }
 
     public function clearStatus(): void

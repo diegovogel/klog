@@ -49,7 +49,12 @@ class MaintainerResolverService
     public function getUserEmailsInOrder(): array
     {
         try {
-            return User::query()->active()->orderBy('id')->pluck('email')->all();
+            return User::query()
+                ->active()
+                ->whereDoesntHave('invite', fn ($q) => $q->whereNull('accepted_at'))
+                ->orderBy('id')
+                ->pluck('email')
+                ->all();
         } catch (\Throwable) {
             return [];
         }
