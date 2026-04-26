@@ -76,6 +76,12 @@ php artisan search:reindex                   # Rebuild the memories_fts search i
 - **Web clipping content extraction** — `clippings:fetch-content` fetches page HTML via Laravel's HTTP client,
   strips non-content elements, and stores minimal structural HTML (headings, paragraphs, lists). Runs daily at 01:00.
   No external dependencies. Failed URLs are retried up to 14 times before being permanently skipped.
+- **URL probe with SSRF protection** — `/url-check` validates web-clipping URLs at form-blur time
+  (suggests fixes for partial entries like `google.com`, warns on auth-walled / unreachable URLs).
+  Uses `HostValidator::resolvePublic()` to reject private / loopback / link-local / reserved IPs,
+  pins the validated IP via `CURLOPT_RESOLVE` to defeat DNS rebinding, and follows redirects
+  manually with per-hop re-validation. Reuse `HostValidator` for any future outbound HTTP that
+  takes user-supplied hosts.
 - **Optional screenshot add-on** — web clipping screenshots use `spatie/browsershot` + `puppeteer`, installed via
   `php artisan clippings:install-screenshots`. The schedule in `routes/console.php` activates automatically via
   `class_exists()` check. Screenshots are full-page PNGs stored as polymorphic `Media` on `WebClipping`. The app
@@ -178,18 +184,10 @@ php artisan search:reindex                   # Rebuild the memories_fts search i
 
 ## Code Review
 
-**OpenAI Codex** is used for automated PR code review. Follow this process for all PRs:
-
-1. **Create the PR** via `gh pr create`.
-2. **Request a review** by posting a separate comment: `@codex review`.
-3. **Poll for feedback** every 2 minutes by checking `gh api repos/{owner}/{repo}/pulls/{n}/reviews`
-   for new reviews and `gh api repos/{owner}/{repo}/pulls/{n}/comments` for inline suggestions.
-4. **Address feedback** — read the inline comments, make code changes, commit, and push.
-5. **Re-request review** — after each push, post another `@codex review` comment.
-6. **Stop** when either:
-   - Codex posts a comment containing "Didn't find any major issues" (no more changes requested), or
-   - 5 review rounds have been completed (whichever comes first).
-   Cancel the cron job and report the result to the user ("good to go" or "max rounds reached").
+**OpenAI Codex** is used for automated PR code review. Use the `/pr-with-codex` slash
+command — it creates the PR and runs it through up to 5 automated `@codex review` cycles,
+addressing each finding as a new commit until the review is clean. Use `/review-with-codex`
+to iterate on a branch *before* opening the PR (same loop, no PR noise).
 
 Codex reviews appear as reviews with `state: "COMMENTED"` and inline comments from the
 `chatgpt-codex-connector[bot]` user. When Codex has no suggestions, it posts a top-level
