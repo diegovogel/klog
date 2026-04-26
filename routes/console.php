@@ -16,11 +16,11 @@ Artisan::command('inspire', function () {
 Schedule::command('clippings:fetch-content')->dailyAt('01:00');
 
 if (class_exists(\Spatie\Browsershot\Browsershot::class)) {
-    Schedule::call(function () {
-        if (app(ScreenshotFeatureService::class)->isEnabled()) {
-            Artisan::call('clippings:screenshot');
-        }
-    })->dailyAt('02:00');
+    // Use Schedule::command so the scheduler gets the artisan exit code —
+    // Schedule::call wrapping Artisan::call would always record success.
+    Schedule::command('clippings:screenshot')
+        ->dailyAt('02:00')
+        ->when(fn () => app(ScreenshotFeatureService::class)->isEnabled());
 }
 
 // Clean up orphaned and expired upload sessions

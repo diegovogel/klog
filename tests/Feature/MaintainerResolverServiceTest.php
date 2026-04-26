@@ -59,17 +59,18 @@ describe('MaintainerResolverService', function () {
     });
 
     describe('saveDiscoveredEmail', function () {
-        it('stores the email in app_settings', function () {
+        it('stores the email in app_settings under the auto-discovery key', function () {
             $this->service->saveDiscoveredEmail('discovered@example.com');
 
-            expect(AppSetting::getValue('maintainer_email'))->toBe('discovered@example.com');
+            expect(AppSetting::getValue('maintainer_email_autodiscovered'))->toBe('discovered@example.com');
+            expect(AppSetting::getValue('maintainer_email'))->toBeNull();
         });
 
-        it('overwrites a previously stored email', function () {
+        it('overwrites a previously stored auto-discovered email', function () {
             $this->service->saveDiscoveredEmail('old@example.com');
             $this->service->saveDiscoveredEmail('new@example.com');
 
-            expect(AppSetting::getValue('maintainer_email'))->toBe('new@example.com');
+            expect(AppSetting::getValue('maintainer_email_autodiscovered'))->toBe('new@example.com');
         });
     });
 });

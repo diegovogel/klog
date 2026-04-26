@@ -7,15 +7,20 @@ use App\Models\User;
 
 class MaintainerResolverService
 {
+    /** Admin-configured value via the Settings UI. */
     private const SETTING_KEY = 'maintainer_email';
+
+    /** Cached recipient discovered via the user-iteration fallback. Lower priority than the env var. */
+    private const AUTODISCOVERY_KEY = 'maintainer_email_autodiscovered';
 
     /**
      * Resolve the maintainer email address.
      *
      * Priority:
-     * 1. app_settings value (Settings UI wins)
-     * 2. MAINTAINER_EMAIL env var (seed / default)
-     * 3. null (caller must try users in order)
+     * 1. Admin-configured `maintainer_email` (Settings UI)
+     * 2. `MAINTAINER_EMAIL` env var
+     * 3. Auto-discovered fallback (cached from a prior successful send)
+     * 4. null (caller iterates users)
      */
     public function resolve(): ?string
     {
@@ -31,6 +36,15 @@ class MaintainerResolverService
         $envEmail = config('klog.maintainer_email');
         if ($envEmail !== null && $envEmail !== '') {
             return $envEmail;
+        }
+
+        try {
+            $autodiscovered = AppSetting::getValue(self::AUTODISCOVERY_KEY);
+            if ($autodiscovered !== null && $autodiscovered !== '') {
+                return $autodiscovered;
+            }
+        } catch (\Throwable) {
+            // DB unavailable — keep falling through.
         }
 
         return null;
@@ -61,12 +75,15 @@ class MaintainerResolverService
     }
 
     /**
-     * Save a successfully discovered maintainer email.
+     * Save a successfully discovered maintainer email under a key that has
+     * lower precedence than both the admin-configured value and the env var,
+     * so a transient send failure to the configured address can't permanently
+     * reroute future mail.
      */
     public function saveDiscoveredEmail(string $email): void
     {
         try {
-            AppSetting::setValue(self::SETTING_KEY, $email);
+            AppSetting::setValue(self::AUTODISCOVERY_KEY, $email);
         } catch (\Throwable) {
             // DB may not be available; silently ignore
         }
