@@ -46,4 +46,26 @@ describe('MimeType enum', function () {
             ->toContain('audio/mp4')
             ->and(count($values))->toBe(count(MimeType::cases()));
     });
+
+    it('exposes a media type for every case', function (MimeType $case) {
+        expect($case->mediaType())->toBeInstanceOf(MediaType::class);
+    })->with(MimeType::cases());
+
+    it('returns human-friendly labels for each case', function () {
+        expect(MimeType::JPEG->label())->toBe('JPG')
+            ->and(MimeType::MPEG->label())->toBe('MP3')
+            ->and(MimeType::MP4_AUDIO->label())->toBe('M4A')
+            ->and(MimeType::WEBM_VIDEO->label())->toBe('WEBM')
+            ->and(MimeType::WEBM_AUDIO->label())->toBe('WEBM')
+            ->and(MimeType::PNG->label())->toBe('PNG');
+    });
+
+    it('groups labels by media type', function () {
+        $grouped = MimeType::labelsByMediaType();
+
+        expect(array_keys($grouped))->toEqualCanonicalizing(MediaType::values())
+            ->and($grouped[MediaType::IMAGE->value])->toContain('JPG', 'PNG', 'HEIC', 'AVIF')
+            ->and($grouped[MediaType::VIDEO->value])->toContain('MP4', 'MOV', 'WEBM')
+            ->and($grouped[MediaType::AUDIO->value])->toContain('MP3', 'WAV', 'M4A', 'WEBM');
+    });
 });
