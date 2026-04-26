@@ -7,6 +7,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TwoFactorSettingsController;
 use App\Http\Controllers\UploadController;
+use App\Http\Controllers\UrlCheckController;
 use App\Http\Requests\StoreMemoryRequest;
 use App\Models\Child;
 use App\Models\Memory;
@@ -67,6 +68,10 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('two-factor')->group(function () {
         Route::get('media/{filename}', [MediaController::class, 'show'])->name('media.show');
+
+        Route::get('url-check', [UrlCheckController::class, 'check'])
+            ->middleware('throttle:30,1')
+            ->name('url-check');
 
         Route::post('uploads/init', [UploadController::class, 'init'])->name('uploads.init');
         Route::post('uploads/{uploadSession}/chunk', [UploadController::class, 'chunk'])->name('uploads.chunk');
