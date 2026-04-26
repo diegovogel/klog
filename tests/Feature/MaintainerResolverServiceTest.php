@@ -29,11 +29,11 @@ describe('MaintainerResolverService', function () {
             expect($this->service->resolve())->toBeNull();
         });
 
-        it('prefers env var over stored setting', function () {
+        it('prefers stored setting over env var (UI wins)', function () {
             config()->set('klog.maintainer_email', 'env@example.com');
             AppSetting::setValue('maintainer_email', 'stored@example.com');
 
-            expect($this->service->resolve())->toBe('env@example.com');
+            expect($this->service->resolve())->toBe('stored@example.com');
         });
 
         it('treats empty string env var as unset', function () {
@@ -59,17 +59,18 @@ describe('MaintainerResolverService', function () {
     });
 
     describe('saveDiscoveredEmail', function () {
-        it('stores the email in app_settings', function () {
+        it('stores the email in app_settings under the auto-discovery key', function () {
             $this->service->saveDiscoveredEmail('discovered@example.com');
 
-            expect(AppSetting::getValue('maintainer_email'))->toBe('discovered@example.com');
+            expect(AppSetting::getValue('maintainer_email_autodiscovered'))->toBe('discovered@example.com');
+            expect(AppSetting::getValue('maintainer_email'))->toBeNull();
         });
 
-        it('overwrites a previously stored email', function () {
+        it('overwrites a previously stored auto-discovered email', function () {
             $this->service->saveDiscoveredEmail('old@example.com');
             $this->service->saveDiscoveredEmail('new@example.com');
 
-            expect(AppSetting::getValue('maintainer_email'))->toBe('new@example.com');
+            expect(AppSetting::getValue('maintainer_email_autodiscovered'))->toBe('new@example.com');
         });
     });
 });

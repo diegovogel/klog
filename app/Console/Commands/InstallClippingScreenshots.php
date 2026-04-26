@@ -53,12 +53,15 @@ class InstallClippingScreenshots extends Command
         //    fresh autoloader that knows about the newly installed package.
         $this->info('Verifying screenshot pipeline...');
 
+        // Use exit() so a `false` return from testPipeline becomes a
+        // non-zero subprocess exit code that we can detect here. Otherwise
+        // tinker would happily print `false` and exit 0, masking the failure.
         $result = Process::path(base_path())->run(
-            'php artisan tinker --execute="app(App\\Services\\ScreenshotService::class)->testPipeline()"'
+            'php artisan tinker --execute="exit(app(App\\Services\\ScreenshotService::class)->testPipeline() ? 0 : 1);"'
         );
 
         if ($result->failed()) {
-            $this->error('Pipeline test failed: '.$result->errorOutput());
+            $this->error('Pipeline test failed: '.($result->errorOutput() ?: $result->output()));
 
             return self::FAILURE;
         }

@@ -7,6 +7,12 @@
             {{ $user->two_factor_method === \App\Enums\TwoFactorMethod::EMAIL ? 'Email' : 'Authenticator app' }}
         </div>
 
+        <p class="settings-section__detail">
+            {{ $user->unusedRecoveryCodeCount() }} of {{ config('klog.two_factor.recovery_code_count', 8) }} recovery
+            {{ \Illuminate\Support\Str::plural('code', $user->unusedRecoveryCodeCount()) }} remaining.
+            Recovery codes are stored hashed and can't be re-displayed; regenerate to see a fresh set.
+        </p>
+
         <div class="settings-section__methods">
             <form method="POST" action="{{ route('two-factor.disable') }}">
                 @csrf
@@ -28,7 +34,7 @@
                     <label for="regen-password" class="form-label">Password</label>
                     <input id="regen-password" name="password" type="password" class="form-input" required>
                 </div>
-                <button type="submit" class="btn btn--secondary">Regenerate Recovery Codes</button>
+                <button type="submit" class="btn btn--secondary">Regenerate recovery codes</button>
             </form>
         </div>
     @else

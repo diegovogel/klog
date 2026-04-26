@@ -45,7 +45,7 @@
                 <div class="form-group">
                     <label class="checkbox-label">
                         <input type="checkbox" name="remember" value="1">
-                        Remember this device for {{ config('klog.two_factor.remember_days', 30) }} days
+                        Remember this device for {{ $rememberDays }} days
                     </label>
                 </div>
 

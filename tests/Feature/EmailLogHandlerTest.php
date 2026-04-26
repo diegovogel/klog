@@ -114,13 +114,16 @@ describe('EmailLogHandler', function () {
             });
         });
 
-        it('saves the successful recipient to app_settings', function () {
+        it('saves the successful recipient to app_settings under the auto-discovery key', function () {
             User::factory()->create(['email' => 'user1@example.com']);
 
             $handler = new EmailLogHandler;
             $handler->handle(makeLogRecord());
 
-            expect(AppSetting::getValue('maintainer_email'))->toBe('user1@example.com');
+            // Stored under the auto-discovery key (not the admin-configured one)
+            // so it doesn't override an env-set MAINTAINER_EMAIL.
+            expect(AppSetting::getValue('maintainer_email_autodiscovered'))->toBe('user1@example.com');
+            expect(AppSetting::getValue('maintainer_email'))->toBeNull();
         });
 
         it('uses stored setting on subsequent errors', function () {

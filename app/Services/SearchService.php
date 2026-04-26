@@ -27,7 +27,7 @@ class SearchService
     {
         $match = $this->buildMatchQuery($query);
 
-        $builder = Memory::query()->with(['media', 'children', 'tags', 'webClippings']);
+        $builder = Memory::query()->with(['media', 'children', 'tags', 'webClippings', 'user']);
 
         if ($match !== '') {
             $builder

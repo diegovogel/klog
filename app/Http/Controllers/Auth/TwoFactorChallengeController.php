@@ -6,6 +6,7 @@ use App\Enums\TwoFactorMethod;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\TwoFactorChallengeRequest;
 use App\Mail\TwoFactorCodeMail;
+use App\Services\TwoFactorConfigService;
 use App\Services\TwoFactorService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,6 +17,7 @@ class TwoFactorChallengeController extends Controller
 {
     public function __construct(
         private TwoFactorService $twoFactorService,
+        private TwoFactorConfigService $twoFactorConfig,
     ) {}
 
     public function show(Request $request): View|RedirectResponse
@@ -32,6 +34,7 @@ class TwoFactorChallengeController extends Controller
 
         return view('auth.two-factor-challenge', [
             'method' => $user->two_factor_method,
+            'rememberDays' => $this->twoFactorConfig->rememberDays(),
         ]);
     }
 
@@ -65,7 +68,7 @@ class TwoFactorChallengeController extends Controller
 
         if ($request->boolean('remember')) {
             $token = $this->twoFactorService->generateRememberToken($user);
-            $days = config('klog.two_factor.remember_days', 30);
+            $days = $this->twoFactorConfig->rememberDays();
 
             $response->withCookie(cookie('two_factor_remember', $token, $days * 24 * 60));
         }

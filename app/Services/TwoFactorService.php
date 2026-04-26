@@ -107,7 +107,7 @@ class TwoFactorService
     public function generateRememberToken(User $user): string
     {
         $token = Str::random(64);
-        $days = config('klog.two_factor.remember_days', 30);
+        $days = app(TwoFactorConfigService::class)->rememberDays();
 
         $user->rememberedDevices()->create([
             'token_hash' => hash('sha256', $token),
