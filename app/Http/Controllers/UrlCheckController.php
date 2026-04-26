@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CheckUrlRequest;
 use App\Services\HostValidator;
+use GuzzleHttp\Psr7\Uri;
+use GuzzleHttp\Psr7\UriResolver;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Http;
 
@@ -19,6 +22,8 @@ class UrlCheckController extends Controller
 
     /** @var array<int, int> Status codes worth retrying with GET when HEAD is unsupported. */
     private const RETRY_WITH_GET = [405, 501];
+
+    private const MAX_REDIRECTS = 5;
 
     public function __construct(private HostValidator $hostValidator) {}
 
@@ -49,21 +54,52 @@ class UrlCheckController extends Controller
         ]);
     }
 
+    /**
+     * Follow redirects manually so each hop validates its own host and pins
+     * its own DNS via CURLOPT_RESOLVE. Guzzle's built-in allow_redirects only
+     * lets us validate hosts in the on_redirect callback, which leaves a DNS
+     * rebinding window between callback time and cURL's connection time.
+     */
     private function probe(string $url): int
     {
-        $client = $this->buildClient($url);
+        $current = $url;
 
+        for ($hop = 0; $hop <= self::MAX_REDIRECTS; $hop++) {
+            $response = $this->probeOnce($current);
+            $status = $response->status();
+
+            if ($status < 300 || $status >= 400) {
+                return $status;
+            }
+
+            $location = $response->header('Location');
+            if ($location === '') {
+                return $status;
+            }
+
+            if ($hop === self::MAX_REDIRECTS) {
+                throw new \RuntimeException('Too many redirects');
+            }
+
+            $current = (string) UriResolver::resolve(new Uri($current), new Uri($location));
+        }
+
+        throw new \RuntimeException('Redirect loop guard exceeded');
+    }
+
+    private function probeOnce(string $url): Response
+    {
+        $client = $this->buildClient($url);
         $head = $client->head($url);
 
         if (in_array($head->status(), self::RETRY_WITH_GET, true)) {
             return $client
                 ->withHeaders(['Range' => 'bytes=0-0'])
                 ->withOptions(['stream' => true])
-                ->get($url)
-                ->status();
+                ->get($url);
         }
 
-        return $head->status();
+        return $head;
     }
 
     private function buildClient(string $url): PendingRequest
@@ -82,21 +118,8 @@ class UrlCheckController extends Controller
         }
 
         $port = $parts['port'] ?? ($scheme === 'https' ? 443 : 80);
-        $hostValidator = $this->hostValidator;
 
-        $options = [
-            'allow_redirects' => [
-                'max' => 5,
-                'strict' => false,
-                'referer' => false,
-                'protocols' => ['http', 'https'],
-                'on_redirect' => function ($request, $response, $uri) use ($hostValidator) {
-                    if ($hostValidator->resolvePublic($uri->getHost()) === null) {
-                        throw new \RuntimeException('Redirect to non-public host blocked');
-                    }
-                },
-            ],
-        ];
+        $options = ['allow_redirects' => false];
 
         if (HostValidator::shouldPinDns($host)) {
             $options['curl'] = [

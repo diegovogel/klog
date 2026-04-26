@@ -204,6 +204,16 @@ describe('url check (SSRF protection)', function () {
             ->assertExactJson(['ok' => true, 'status' => 200, 'reason' => null]);
     });
 
+    it('reports unreachable when redirects exceed the hop cap', function () {
+        Http::fake([
+            '*' => Http::response('', 302, ['Location' => 'https://example.com/loop']),
+        ]);
+
+        $this->getJson(route('url-check', ['url' => 'https://example.com/start']))
+            ->assertOk()
+            ->assertExactJson(['ok' => false, 'status' => 0, 'reason' => 'unreachable']);
+    });
+
     it('blocks redirects to non-public hosts', function () {
         $this->mock(HostValidator::class, function ($mock) {
             $mock->shouldReceive('resolvePublic')
