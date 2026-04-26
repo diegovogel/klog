@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CheckUrlRequest;
 use App\Services\HostValidator;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Http;
 
@@ -29,7 +30,7 @@ class UrlCheckController extends Controller
             return $this->result(0, 'unreachable');
         }
 
-        if ($status >= 200 && $status < 400) {
+        if ($status >= 200 && $status < 300) {
             return $this->result($status, null);
         }
 
@@ -50,15 +51,7 @@ class UrlCheckController extends Controller
 
     private function probe(string $url): int
     {
-        $host = parse_url($url, PHP_URL_HOST);
-        if (! is_string($host) || ! $this->hostValidator->isPublic($host)) {
-            throw new \RuntimeException('Non-public host rejected');
-        }
-
-        $client = Http::timeout(self::TIMEOUT)
-            ->connectTimeout(self::CONNECT_TIMEOUT)
-            ->withUserAgent('Klog/1.0 (URL check)')
-            ->withOptions(['allow_redirects' => false]);
+        $client = $this->buildClient($url);
 
         $head = $client->head($url);
 
@@ -71,5 +64,35 @@ class UrlCheckController extends Controller
         }
 
         return $head->status();
+    }
+
+    private function buildClient(string $url): PendingRequest
+    {
+        $parts = parse_url($url);
+        $host = $parts['host'] ?? null;
+        $scheme = strtolower($parts['scheme'] ?? '');
+
+        if (! is_string($host) || ! in_array($scheme, ['http', 'https'], true)) {
+            throw new \RuntimeException('Invalid URL');
+        }
+
+        $ips = $this->hostValidator->resolvePublic($host);
+        if ($ips === null) {
+            throw new \RuntimeException('Non-public host rejected');
+        }
+
+        $port = $parts['port'] ?? ($scheme === 'https' ? 443 : 80);
+        $resolveEntries = array_map(
+            fn (string $ip) => sprintf('%s:%d:%s', trim($host, '[]'), $port, $ip),
+            $ips,
+        );
+
+        return Http::timeout(self::TIMEOUT)
+            ->connectTimeout(self::CONNECT_TIMEOUT)
+            ->withUserAgent('Klog/1.0 (URL check)')
+            ->withOptions([
+                'allow_redirects' => false,
+                'curl' => [CURLOPT_RESOLVE => $resolveEntries],
+            ]);
     }
 }

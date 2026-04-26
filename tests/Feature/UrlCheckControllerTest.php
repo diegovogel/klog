@@ -14,8 +14,8 @@ describe('url check (authenticated)', function () {
     beforeEach(function () {
         $this->actingAs(User::factory()->create());
         $this->mock(HostValidator::class)
-            ->shouldReceive('isPublic')
-            ->andReturn(true);
+            ->shouldReceive('resolvePublic')
+            ->andReturn(['203.0.113.10']);
     });
 
     it('reports ok for a 2xx response', function () {
@@ -26,14 +26,14 @@ describe('url check (authenticated)', function () {
             ->assertExactJson(['ok' => true, 'status' => 200, 'reason' => null]);
     });
 
-    it('reports ok for a 3xx response without following the redirect', function () {
-        Http::fake(['*' => Http::response('', 301)]);
+    it('reports unreachable for a 3xx response and does not follow the redirect', function () {
+        Http::fake(['*' => Http::response('', 302)]);
 
         $this->getJson(route('url-check', ['url' => 'https://example.com']))
             ->assertOk()
-            ->assertExactJson(['ok' => true, 'status' => 301, 'reason' => null]);
+            ->assertExactJson(['ok' => false, 'status' => 302, 'reason' => 'unreachable']);
 
-        Http::assertSent(fn ($request, $response) => $request->method() === 'HEAD');
+        Http::assertSent(fn ($request) => $request->method() === 'HEAD');
         Http::assertSentCount(1);
     });
 
@@ -168,6 +168,20 @@ describe('url check (SSRF protection)', function () {
         Http::fake();
 
         $this->getJson(route('url-check', ['url' => 'http://[::1]/']))
+            ->assertOk()
+            ->assertExactJson(['ok' => false, 'status' => 0, 'reason' => 'unreachable']);
+
+        Http::assertNothingSent();
+    });
+
+    it('rejects when any resolved IP is private (mixed-result hostname)', function () {
+        $this->mock(HostValidator::class)
+            ->shouldReceive('resolvePublic')
+            ->andReturn(null);
+
+        Http::fake();
+
+        $this->getJson(route('url-check', ['url' => 'http://rebind.attacker.example/']))
             ->assertOk()
             ->assertExactJson(['ok' => false, 'status' => 0, 'reason' => 'unreachable']);
 
