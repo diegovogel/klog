@@ -48,12 +48,31 @@ php artisan search:reindex                   # Rebuild the memories_fts search i
 - **Polymorphic media** — `Media` attaches to `Memory` and `WebClipping` via `mediable_type`/`mediable_id`
 - **Private media storage** — media files are stored on the `local` disk (`storage/app/private/`) and served through
   an auth-protected `MediaController`. No public symlink. URLs use `route('media.show', $filename)`
-- **Session-based auth with optional 2FA** — no registration, no password reset flow. Users are created via
-  `php artisan user:create`. All routes require authentication except `/login`. Two-factor authentication supports
-  two methods: email (always available) and authenticator app (optional add-on). The `EnsureTwoFactorChallenge`
-  middleware intercepts authenticated users who haven't completed 2FA, redirecting to a challenge page. Devices
-  can be remembered via an encrypted cookie (configurable via `TWO_FACTOR_REMEMBER_DAYS` env var, default 30).
-  Recovery codes (8 per user, bcrypt-hashed) work with both methods.
+- **Session-based auth with optional 2FA** — no public registration, no password reset flow. Users are created
+  via `php artisan user:create` or admin invite (see "Two-tier roles" below). Public routes: `/login` and
+  `/invites/{token}`. Two-factor authentication supports two methods: email (always available) and authenticator
+  app (optional add-on). The `EnsureTwoFactorChallenge` middleware intercepts authenticated users who haven't
+  completed 2FA, redirecting to a challenge page. Devices can be remembered via an encrypted cookie. The remember
+  duration defaults to `TWO_FACTOR_REMEMBER_DAYS` (env, default 30) but is overridden at runtime by the
+  admin-configured `app_settings.two_factor_remember_days`, resolved through `TwoFactorConfigService`. Recovery
+  codes (8 per user, bcrypt-hashed) work with both methods; the settings page shows unused-code count and lets
+  the user regenerate (re-display is impossible by design).
+- **Two-tier roles, invite-based onboarding, deactivation over deletion** — every user has a `UserRole` (`admin`
+  or `member`). Admins manage application settings + users from `/settings` (admin sections gated by the `admin`
+  middleware alias, registered in `bootstrap/app.php`). New users are invited via `settings.users.invite`, which
+  creates a stub user + a single-use 64-char `UserInvite` (2-day expiration), then mails a signed `/invites/{token}`
+  setup URL. Removed users are *deactivated* (`users.deactivated_at`), not deleted, so memory authorship survives.
+  Login rejects deactivated users with the generic `auth.failed` message. The `EnsureUserActive` middleware
+  (alias `user-active`, applied to every authenticated route) kicks deactivated users mid-session on their next
+  request — and enforces a per-user **session epoch**: `users.session_invalidated_at` is bumped by
+  `User::deactivate()`, by `logOutOtherDevices`, and by password change. Sessions carry an `auth.created_at`
+  value (stamped by the `StampAuthCreatedAt` listener on every `Login` event, including Laravel's recaller-cookie
+  path); the middleware compares the two with an inclusive `<=` so a session created in the same whole second as
+  an invalidation event is treated as stale. The actor's own session is preserved by stamping `+1s`.
+  `User::deactivate()` also cycles `remember_token`, deletes `two_factor_remembered_devices` rows, and (on the
+  database session driver) deletes the user's `sessions` rows. Last-admin guard wraps role-change and
+  deactivation in `DB::transaction` + `lockForUpdate` so concurrent admins can't both succeed and leave zero
+  active admins. Invite accept uses an atomic conditional `UPDATE` so a single token can't be consumed twice.
 - **Web clipping content extraction** — `clippings:fetch-content` fetches page HTML via Laravel's HTTP client,
   strips non-content elements, and stores minimal structural HTML (headings, paragraphs, lists). Runs daily at 01:00.
   No external dependencies. Failed URLs are retried up to 14 times before being permanently skipped.
@@ -84,10 +103,16 @@ php artisan search:reindex                   # Rebuild the memories_fts search i
   `config/klog.php` under `media_optimization` key. Client-side image resize reads the same config values
   via data attributes on the upload component.
 - **Error email notifications** — a custom Monolog log channel (`email`) in the default logging stack sends
-  error-level (and above) log entries to a maintainer via email. Recipient resolution: `MAINTAINER_EMAIL` env var
-  → stored `app_settings` value → iterate users by ID until one succeeds (saved for future errors). Includes
-  rate limiting (1 email per unique error per 15 min), infinite-loop prevention, and resilience to pre-migration
-  state. Configured in `config/logging.php` and `config/klog.php`.
+  error-level (and above) log entries to a maintainer via email. Recipient resolution priority:
+  (1) admin-configured `app_settings.maintainer_email` from the Settings UI,
+  (2) `MAINTAINER_EMAIL` env var,
+  (3) cached auto-discovery `app_settings.maintainer_email_autodiscovered` (lower priority on purpose so a
+  transient send failure can't reroute future mail away from the configured value),
+  (4) iterate users by ID until one succeeds (then cache that recipient under the auto-discovery key).
+  The ordering — UI > env — is deliberate: admins should be able to change the maintainer email through the
+  browser without ops access. Pending invitees and deactivated users are excluded from the user-iteration
+  fallback. Includes rate limiting (1 email per unique error per 15 min), infinite-loop prevention, and
+  resilience to pre-migration state. Configured in `config/logging.php` and `config/klog.php`.
 - **Full-text search via SQLite FTS5** — search is powered by a `memories_fts` virtual table (FTS5, porter
   tokenizer + unicode61 with diacritic folding) kept in sync with the source via the `MemoryObserver` and
   `SearchIndexer` service. Searchable fields: memory title, memory content (HTML stripped), tag names, and
@@ -112,9 +137,18 @@ php artisan search:reindex                   # Rebuild the memories_fts search i
 - **Tag** — unique name + auto-generated slug, many-to-many with Memory via `memory_tag` pivot
 - **UploadSession** — tracks chunked upload progress; UUID primary key, belongs to User, stores chunk
   indices and assembled file path on completion
-- **AppSetting** — key-value store for application settings (e.g., discovered `maintainer_email`)
-- **User** — standard Laravel auth; optional 2FA columns: `two_factor_method` (enum), `two_factor_secret`
-  (encrypted), `two_factor_recovery_codes` (encrypted array), `two_factor_confirmed_at`, `two_factor_remember_token`
+- **AppSetting** — key-value store for application settings (`maintainer_email`,
+  `maintainer_email_autodiscovered`, `two_factor_remember_days`, `screenshots_enabled`,
+  `screenshots.install.status`)
+- **User** — standard Laravel auth, plus: `role` (`UserRole` enum), `deactivated_at` (nullable timestamp),
+  `session_invalidated_at` (nullable timestamp, the per-user session epoch), and optional 2FA columns:
+  `two_factor_method` (enum), `two_factor_secret` (encrypted), `two_factor_recovery_codes` (encrypted array),
+  `two_factor_confirmed_at`. Scopes: `active` / `deactivated`. `User::multipleExist()` is a request-scoped
+  cached check used by the memory card to decide whether to render the author label.
+- **UserInvite** — single-use invite token belonging to a User; columns `token` (64-char unique),
+  `expires_at`, `accepted_at` (nullable). Created by `UserInviteService::invite()`, consumed atomically by
+  `UserInviteService::accept()` (conditional UPDATE on `accepted_at IS NULL`). Expired-and-unaccepted
+  invites are purged daily; if the stub user has no memories, the user is deleted alongside.
 
 ### Key Relationships
 
@@ -129,6 +163,7 @@ php artisan search:reindex                   # Rebuild the memories_fts search i
 - `MimeType` — JPEG, PNG, GIF, WEBP, HEIC, HEIF, AVIF, MOV, MP4, WEBM_VIDEO, MPEG, WAV, M4A, WEBM_AUDIO
 - `TwoFactorMethod` — EMAIL, AUTHENTICATOR
 - `ProcessingStatus` — Pending, Processing, Complete, Failed
+- `UserRole` — admin, member
 
 ## Coding Conventions
 
@@ -171,20 +206,21 @@ issue comment (not a review) starting with "Codex Review: Didn't find any major 
 
 ```
 app/Console/Commands/ — Artisan commands (user:create, user:reset-password, media:migrate-to-private, clippings:*, 2fa:*, search:reindex)
-app/Enums/            — PHP enums (MemoryType, MediaType, MimeType, TwoFactorMethod, ProcessingStatus)
-app/Http/Controllers/ — Controllers (Auth/LoginController, Auth/TwoFactorChallengeController, TwoFactorSettingsController, MediaController, UploadController, SearchController)
-app/Http/Middleware/  — Custom middleware (EnsureTwoFactorChallenge)
-app/Http/Requests/    — Form request validation (Auth/LoginRequest, Auth/TwoFactorChallengeRequest, InitUploadRequest, StoreChunkRequest, SearchRequest)
+app/Enums/            — PHP enums (MemoryType, MediaType, MimeType, TwoFactorMethod, ProcessingStatus, UserRole)
+app/Http/Controllers/ — Controllers (Auth/LoginController, Auth/TwoFactorChallengeController, Auth/InviteController, AccountSettingsController, AppSettingsController, ScreenshotSettingsController, SettingsController, TwoFactorSettingsController, UserManagementController, MediaController, UploadController, UrlCheckController, SearchController)
+app/Http/Middleware/  — Custom middleware (EnsureTwoFactorChallenge, EnsureUserActive, RequireAdmin, SecurityHeaders)
+app/Http/Requests/    — Form request validation (Auth/*, Settings/*, InitUploadRequest, StoreChunkRequest, SearchRequest, CheckUrlRequest)
 app/Models/           — Eloquent models
 app/Observers/        — Eloquent observers (MemoryObserver for search index sync)
 app/Logging/          — Custom Monolog handlers (EmailLogHandler)
-app/Mail/             — Mailable classes (ErrorOccurred, TwoFactorCodeMail)
-app/Jobs/             — Queued jobs (OptimizeMedia)
-app/Services/         — Business logic (MediaStorageService, MediaOptimizationService, MaintainerResolverService, ScreenshotService, TwoFactorService, AuthenticatorService, WebClippingContentService, HtmlSanitizer, SearchService, SearchIndexer)
+app/Listeners/        — Event listeners (StampAuthCreatedAt for the session-epoch comparison)
+app/Mail/             — Mailable classes (ErrorOccurred, TwoFactorCodeMail, UserInvited)
+app/Jobs/             — Queued jobs (OptimizeMedia, InstallScreenshotsJob, UninstallScreenshotsJob)
+app/Services/         — Business logic (MediaStorageService, MediaOptimizationService, MaintainerResolverService, ScreenshotService, ScreenshotFeatureService, TwoFactorService, TwoFactorConfigService, AuthenticatorService, UserInviteService, WebClippingContentService, HtmlSanitizer, HostValidator, SearchService, SearchIndexer)
 database/migrations/  — Schema definitions
 database/factories/   — Test data factories
 database/seeders/     — Database seeders
-resources/views/      — Blade templates (auth/login)
+resources/views/      — Blade templates (auth/login, auth/accept-invite, settings/index + partials, emails/*)
 resources/css/        — CSS entry point
 resources/js/         — Minimal vanilla JS (components/, lib/)
 tests/Feature/        — Feature/integration tests
