@@ -224,24 +224,32 @@ describe('url check (SSRF protection)', function () {
     });
 });
 
+describe('HostValidator::shouldPinDns', function () {
+    it('returns true for hostnames that need DNS pinning', function () {
+        expect(\App\Services\HostValidator::shouldPinDns('example.com'))->toBeTrue();
+    });
+
+    it('returns false for IPv4 literal hosts', function () {
+        expect(\App\Services\HostValidator::shouldPinDns('1.1.1.1'))->toBeFalse();
+    });
+
+    it('returns false for bracketed IPv6 literal hosts (no DNS lookup happens; cURL rejects bracketed --resolve entries)', function () {
+        expect(\App\Services\HostValidator::shouldPinDns('[2606:4700:4700::1111]'))->toBeFalse();
+    });
+
+    it('returns false for bare IPv6 literal hosts', function () {
+        expect(\App\Services\HostValidator::shouldPinDns('::1'))->toBeFalse();
+    });
+});
+
 describe('HostValidator::curlResolveEntries', function () {
-    it('formats IPv4 host:port:ip entries', function () {
+    it('formats host:port:ip entries for hostnames', function () {
         expect(\App\Services\HostValidator::curlResolveEntries('example.com', 443, ['1.2.3.4', '1.2.3.5']))
             ->toBe(['example.com:443:1.2.3.4', 'example.com:443:1.2.3.5']);
     });
 
-    it('brackets IPv6 hosts so cURL can parse the entry', function () {
-        expect(\App\Services\HostValidator::curlResolveEntries('[2606:4700:4700::1111]', 80, ['2606:4700:4700::1111']))
-            ->toBe(['[2606:4700:4700::1111]:80:2606:4700:4700::1111']);
-    });
-
-    it('brackets bare IPv6 hosts too', function () {
-        expect(\App\Services\HostValidator::curlResolveEntries('::1', 80, ['::1']))
-            ->toBe(['[::1]:80:::1']);
-    });
-
-    it('does not bracket IPv4 hosts', function () {
-        expect(\App\Services\HostValidator::curlResolveEntries('1.1.1.1', 80, ['1.1.1.1']))
-            ->toBe(['1.1.1.1:80:1.1.1.1']);
+    it('formats hostname → IPv6 IP entries without bracketing the IP', function () {
+        expect(\App\Services\HostValidator::curlResolveEntries('example.com', 443, ['2606:4700::1']))
+            ->toBe(['example.com:443:2606:4700::1']);
     });
 });

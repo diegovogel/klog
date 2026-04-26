@@ -39,22 +39,27 @@ class HostValidator
     }
 
     /**
-     * Format `CURLOPT_RESOLVE` entries that pin the given `host:port` to the
-     * given IPs. Hosts that are IPv6 literals are wrapped in brackets so cURL
-     * can parse the entry.
+     * Whether a URL with this host needs `CURLOPT_RESOLVE` pinning. Returns
+     * false for IP-literal hosts: cURL does no DNS lookup for those, so there
+     * is nothing to rebind, and passing a `--resolve` entry that contains an
+     * IPv6 literal in the host position is rejected by cURL anyway.
+     */
+    public static function shouldPinDns(string $host): bool
+    {
+        return ! filter_var(trim($host, '[]'), FILTER_VALIDATE_IP);
+    }
+
+    /**
+     * Format `CURLOPT_RESOLVE` entries pinning the given `host:port` to the
+     * given IPs. Only call for non-IP hostnames — see {@see shouldPinDns()}.
      *
      * @param  array<int, string>  $ips
      * @return array<int, string>
      */
     public static function curlResolveEntries(string $host, int $port, array $ips): array
     {
-        $bareHost = trim($host, '[]');
-        $hostForCurl = filter_var($bareHost, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)
-            ? "[{$bareHost}]"
-            : $bareHost;
-
         return array_map(
-            fn (string $ip) => sprintf('%s:%d:%s', $hostForCurl, $port, $ip),
+            fn (string $ip) => sprintf('%s:%d:%s', $host, $port, $ip),
             $ips,
         );
     }
