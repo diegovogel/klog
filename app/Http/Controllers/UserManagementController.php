@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\UserInviteService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class UserManagementController extends Controller
 {
@@ -44,14 +45,23 @@ class UserManagementController extends Controller
             return redirect()->route('settings')->withErrors(['role' => 'You cannot demote yourself.']);
         }
 
-        // Only enforce the last-admin guard when demoting an *active* admin —
-        // a deactivated admin doesn't count toward the active-admin pool, so
-        // demoting them never reduces it.
-        if ($user->isAdmin() && $user->isActive() && $newRole !== UserRole::ADMIN && $this->adminCount() <= 1) {
-            return redirect()->route('settings')->withErrors(['role' => 'At least one admin must remain.']);
-        }
+        try {
+            DB::transaction(function () use ($user, $newRole) {
+                // Lock the target row + the active-admin set so two concurrent
+                // role changes can't both observe count > 1 and leave zero
+                // active admins.
+                $locked = User::query()->lockForUpdate()->findOrFail($user->id);
 
-        $user->forceFill(['role' => $newRole])->save();
+                if ($locked->isAdmin() && $locked->isActive() && $newRole !== UserRole::ADMIN
+                    && $this->adminCountForUpdate() <= 1) {
+                    throw new \RuntimeException('At least one admin must remain.');
+                }
+
+                $locked->forceFill(['role' => $newRole])->save();
+            });
+        } catch (\RuntimeException $e) {
+            return redirect()->route('settings')->withErrors(['role' => $e->getMessage()]);
+        }
 
         return redirect()->route('settings')->with('success', 'Role updated.');
     }
@@ -62,11 +72,19 @@ class UserManagementController extends Controller
             return redirect()->route('settings')->withErrors(['deactivate' => 'You cannot deactivate yourself.']);
         }
 
-        if ($user->isAdmin() && $this->adminCount() <= 1) {
-            return redirect()->route('settings')->withErrors(['deactivate' => 'At least one active admin must remain.']);
-        }
+        try {
+            DB::transaction(function () use ($user) {
+                $locked = User::query()->lockForUpdate()->findOrFail($user->id);
 
-        $user->deactivate();
+                if ($locked->isAdmin() && $locked->isActive() && $this->adminCountForUpdate() <= 1) {
+                    throw new \RuntimeException('At least one active admin must remain.');
+                }
+
+                $locked->deactivate();
+            });
+        } catch (\RuntimeException $e) {
+            return redirect()->route('settings')->withErrors(['deactivate' => $e->getMessage()]);
+        }
 
         return redirect()->route('settings')->with('success', 'User deactivated.');
     }
@@ -83,6 +101,19 @@ class UserManagementController extends Controller
         return User::query()
             ->where('role', UserRole::ADMIN)
             ->active()
+            ->count();
+    }
+
+    /**
+     * Like adminCount() but locks the matching rows so concurrent
+     * role/deactivate transactions serialize on the same admin pool.
+     */
+    private function adminCountForUpdate(): int
+    {
+        return User::query()
+            ->where('role', UserRole::ADMIN)
+            ->active()
+            ->lockForUpdate()
             ->count();
     }
 }

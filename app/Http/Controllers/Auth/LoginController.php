@@ -21,7 +21,10 @@ class LoginController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
-        $request->session()->put('auth.created_at', now()->getTimestamp());
+        // Re-stamp because session()->regenerate() preserves data but the
+        // listener fired before the regenerate. +1s for the same reason as
+        // the listener — inclusive comparison in EnsureUserActive.
+        $request->session()->put('auth.created_at', now()->getTimestamp() + 1);
 
         return redirect()->intended('/');
     }

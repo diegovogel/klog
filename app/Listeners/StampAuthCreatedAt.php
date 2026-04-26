@@ -26,6 +26,9 @@ class StampAuthCreatedAt
             return;
         }
 
-        request()->session()->put('auth.created_at', now()->getTimestamp());
+        // Stamp +1s so a login that lands in the same whole-second as a
+        // prior session_invalidated_at bump isn't treated as stale by
+        // EnsureUserActive's inclusive comparison.
+        request()->session()->put('auth.created_at', now()->getTimestamp() + 1);
     }
 }

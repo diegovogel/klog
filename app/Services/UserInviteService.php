@@ -74,16 +74,26 @@ class UserInviteService
     public function accept(UserInvite $invite, string $name, string $password): User
     {
         return DB::transaction(function () use ($invite, $name, $password) {
+            // Atomically claim the invite. Conditional UPDATE rejects a
+            // concurrent second accept of the same token: only one POST
+            // sees rowsAffected === 1; the other gets 0 and bails.
+            $rowsAffected = UserInvite::query()
+                ->where('id', $invite->id)
+                ->whereNull('accepted_at')
+                ->update(['accepted_at' => now()]);
+
+            if ($rowsAffected === 0) {
+                throw new InviteAlreadyConsumedException;
+            }
+
             /** @var User $user */
-            $user = $invite->user()->firstOrFail();
+            $user = $invite->user()->lockForUpdate()->firstOrFail();
 
             $user->forceFill([
                 'name' => $name,
                 'password' => Hash::make($password),
                 'email_verified_at' => now(),
             ])->save();
-
-            $invite->forceFill(['accepted_at' => now()])->save();
 
             return $user->fresh();
         });

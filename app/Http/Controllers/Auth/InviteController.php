@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\AcceptInviteRequest;
 use App\Models\UserInvite;
+use App\Services\InviteAlreadyConsumedException;
 use App\Services\UserInviteService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -28,15 +29,19 @@ class InviteController extends Controller
     {
         $invite = $this->findUsable($token);
 
-        $user = $this->invites->accept(
-            $invite,
-            $request->validated('name'),
-            $request->validated('password'),
-        );
+        try {
+            $user = $this->invites->accept(
+                $invite,
+                $request->validated('name'),
+                $request->validated('password'),
+            );
+        } catch (InviteAlreadyConsumedException) {
+            abort(404);
+        }
 
         Auth::login($user);
         $request->session()->regenerate();
-        $request->session()->put('auth.created_at', now()->getTimestamp());
+        $request->session()->put('auth.created_at', now()->getTimestamp() + 1);
 
         return redirect('/')->with('success', 'Welcome to '.config('app.name').'.');
     }
