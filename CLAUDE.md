@@ -29,6 +29,7 @@ php artisan migrate     # Run migrations
 php artisan db:seed     # Seed database
 php artisan user:create          # Create a new user (interactive)
 php artisan user:reset-password  # Reset a user's password (interactive)
+php artisan user:change-role <email> <admin|member>  # Change a user's role
 php artisan clippings:fetch-content           # Fetch & archive text content for clippings (--limit=10)
 php artisan clippings:install-screenshots    # Install Browsershot + Puppeteer for screenshots
 php artisan clippings:uninstall-screenshots  # Remove screenshot packages
