@@ -19,8 +19,12 @@ afterEach(function () {
 function setComposerHas(bool $present): void
 {
     $composer = json_decode(test()->originalComposerJson, true);
+    $existingConstraint = $composer['require']['spatie/browsershot']
+        ?? $composer['require-dev']['spatie/browsershot']
+        ?? '*';
+
     if ($present) {
-        $composer['require']['spatie/browsershot'] = '*';
+        $composer['require']['spatie/browsershot'] = $existingConstraint;
     } else {
         unset($composer['require']['spatie/browsershot'], $composer['require-dev']['spatie/browsershot']);
     }
@@ -30,8 +34,12 @@ function setComposerHas(bool $present): void
 function setNpmHas(bool $present): void
 {
     $package = json_decode(test()->originalPackageJson, true);
+    $existingConstraint = $package['dependencies']['puppeteer']
+        ?? $package['devDependencies']['puppeteer']
+        ?? '*';
+
     if ($present) {
-        $package['dependencies']['puppeteer'] = '*';
+        $package['dependencies']['puppeteer'] = $existingConstraint;
     } else {
         unset($package['dependencies']['puppeteer'], $package['devDependencies']['puppeteer']);
     }
