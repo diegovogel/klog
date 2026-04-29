@@ -99,3 +99,71 @@ describe('user:reset-password', function () {
             ->assertFailed();
     });
 });
+
+describe('user:change-role', function () {
+    it('should promote a member to admin', function () {
+        $user = User::factory()->create([
+            'email' => 'jane@example.com',
+            'role' => UserRole::MEMBER,
+        ]);
+
+        $this->artisan('user:change-role', ['email' => 'jane@example.com', 'role' => 'admin'])
+            ->expectsOutput('Role for jane@example.com changed to admin.')
+            ->assertSuccessful();
+
+        expect($user->fresh()->role)->toBe(UserRole::ADMIN);
+    });
+
+    it('should demote an admin to member', function () {
+        User::factory()->create(['role' => UserRole::ADMIN]);
+        $user = User::factory()->create([
+            'email' => 'jane@example.com',
+            'role' => UserRole::ADMIN,
+        ]);
+
+        $this->artisan('user:change-role', ['email' => 'jane@example.com', 'role' => 'member'])
+            ->expectsOutput('Role for jane@example.com changed to member.')
+            ->assertSuccessful();
+
+        expect($user->fresh()->role)->toBe(UserRole::MEMBER);
+    });
+
+    it('should fail when user does not exist', function () {
+        $this->artisan('user:change-role', ['email' => 'nobody@example.com', 'role' => 'admin'])
+            ->expectsOutput('No user found with email nobody@example.com.')
+            ->assertFailed();
+    });
+
+    it('should fail when role is invalid', function () {
+        User::factory()->create(['email' => 'jane@example.com', 'role' => UserRole::MEMBER]);
+
+        $this->artisan('user:change-role', ['email' => 'jane@example.com', 'role' => 'wizard'])
+            ->expectsOutputToContain("Invalid role 'wizard'.")
+            ->assertFailed();
+    });
+
+    it('should refuse to demote the last active admin', function () {
+        $user = User::factory()->create([
+            'email' => 'jane@example.com',
+            'role' => UserRole::ADMIN,
+        ]);
+        User::factory()->create([
+            'role' => UserRole::ADMIN,
+            'deactivated_at' => now(),
+        ]);
+
+        $this->artisan('user:change-role', ['email' => 'jane@example.com', 'role' => 'member'])
+            ->expectsOutput('At least one admin must remain.')
+            ->assertFailed();
+
+        expect($user->fresh()->role)->toBe(UserRole::ADMIN);
+    });
+
+    it('should be a no-op when the user already has the requested role', function () {
+        User::factory()->create(['email' => 'jane@example.com', 'role' => UserRole::ADMIN]);
+
+        $this->artisan('user:change-role', ['email' => 'jane@example.com', 'role' => 'admin'])
+            ->expectsOutput('jane@example.com already has role admin.')
+            ->assertSuccessful();
+    });
+});
