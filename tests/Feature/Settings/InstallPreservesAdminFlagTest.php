@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\Artisan;
 
 it('does not overwrite a mid-flight admin disable when install completes', function () {
     $feature = \Mockery::mock(ScreenshotFeatureService::class)->makePartial();
-    $feature->shouldReceive('isInstalled')->once()->andReturn(false);
     $feature->shouldReceive('markStatus')->withAnyArgs();
 
     // The job MUST NOT call setEnabled. If it does, this expectation will fail

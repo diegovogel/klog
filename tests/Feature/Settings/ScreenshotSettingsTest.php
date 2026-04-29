@@ -5,7 +5,6 @@ use App\Jobs\UninstallScreenshotsJob;
 use App\Models\AppSetting;
 use App\Models\User;
 use App\Services\ScreenshotFeatureService;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
@@ -46,7 +45,7 @@ describe('flag toggle', function () {
             ->assertSessionHas('success', fn ($msg) => str_contains($msg, 'Installing the toolchain'));
 
         expect(AppSetting::getValue('screenshots_enabled'))->toBe('true');
-        Queue::assertPushed(InstallScreenshotsJob::class);
+        Queue::assertPushed(InstallScreenshotsJob::class, fn (InstallScreenshotsJob $job) => $job->autoEnable === true);
     });
 
     it('does not auto-install when the toolchain is already installed', function () {
@@ -128,23 +127,5 @@ describe('install/uninstall dispatch', function () {
     });
 });
 
-describe('install job rollback', function () {
-    it('rolls back a fresh install attempt when the command fails', function () {
-        $feature = \Mockery::mock(ScreenshotFeatureService::class)->makePartial();
-        $feature->shouldReceive('isInstalled')->once()->andReturn(false);
-        $feature->shouldReceive('markStatus')->withAnyArgs();
-
-        Artisan::shouldReceive('call')
-            ->once()
-            ->with('clippings:install-screenshots')
-            ->andReturn(1);
-        Artisan::shouldReceive('output')->andReturn('boom');
-
-        Artisan::shouldReceive('call')
-            ->once()
-            ->with('clippings:uninstall-screenshots')
-            ->andReturn(0);
-
-        (new InstallScreenshotsJob)->handle($feature);
-    });
-});
+// Detailed install/rollback coverage lives in InstallRollbackTest.php, which
+// exercises every combination of prior per-package presence.

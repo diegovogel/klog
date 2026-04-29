@@ -20,8 +20,10 @@ class ScreenshotSettingsController extends Controller
 
         // Enabling implicitly requests the toolchain. If it's missing, kick
         // off an install so the admin doesn't have to click a second button.
+        // The autoEnable flag lets the queued job no-op cleanly if the admin
+        // toggles the feature off again before the worker picks it up.
         if ($enabled && ! $this->feature->isInstalled() && $this->feature->tryReserve('install')) {
-            InstallScreenshotsJob::dispatch();
+            InstallScreenshotsJob::dispatch(autoEnable: true);
 
             return redirect()->route('settings')
                 ->with('success', 'Screenshots enabled. Installing the toolchain now — this may take a minute.');
