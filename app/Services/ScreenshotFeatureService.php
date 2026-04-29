@@ -11,7 +11,10 @@ class ScreenshotFeatureService
 
     public const STATUS_CACHE_KEY = 'screenshots.install.status';
 
-    public const STUCK_QUEUED_AFTER_SECONDS = 60;
+    // 5 minutes — long enough to absorb a legitimate queue backlog without
+    // surfacing false "stuck" signals that would tempt an admin to retry
+    // (and end up double-dispatching composer/npm mutations).
+    public const STUCK_QUEUED_AFTER_SECONDS = 300;
 
     // The install/uninstall job sets timeout=600s. Treat anything older
     // than 1.5x the worker timeout as a dead worker so retries aren't
