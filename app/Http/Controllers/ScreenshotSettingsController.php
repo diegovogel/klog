@@ -18,6 +18,15 @@ class ScreenshotSettingsController extends Controller
         $enabled = $request->boolean('enabled');
         $this->feature->setEnabled($enabled);
 
+        // Enabling implicitly requests the toolchain. If it's missing, kick
+        // off an install so the admin doesn't have to click a second button.
+        if ($enabled && ! $this->feature->isInstalled() && $this->feature->tryReserve('install')) {
+            InstallScreenshotsJob::dispatch();
+
+            return redirect()->route('settings')
+                ->with('success', 'Screenshots enabled. Installing the toolchain now — this may take a minute.');
+        }
+
         return redirect()->route('settings')
             ->with('success', 'Screenshots '.($enabled ? 'enabled' : 'disabled').'.');
     }

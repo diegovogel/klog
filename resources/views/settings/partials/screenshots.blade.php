@@ -11,7 +11,7 @@
         </span>
     </div>
 
-    @if($enabled && ! $installed)
+    @if($enabled && ! $installed && ! in_array($status['state'] ?? null, \App\Services\ScreenshotFeatureService::STATES_IN_PROGRESS, true))
         <div class="alert alert--warning">
             Screenshots are enabled but the Chromium toolchain isn't installed. Run the install below.
         </div>
@@ -22,6 +22,15 @@
             <strong>Last operation failed.</strong>
             @if($status['message'])
                 <pre style="white-space: pre-wrap;">{{ $status['message'] }}</pre>
+            @endif
+        </div>
+    @endif
+
+    @if(($status['state'] ?? null) === 'stuck')
+        <div class="alert alert--error">
+            <strong>{{ ucfirst($status['action'] ?? 'operation') }} job stuck.</strong>
+            @if($status['message'])
+                <p>{{ $status['message'] }}</p>
             @endif
         </div>
     @endif
@@ -52,23 +61,25 @@
         @endif
     </div>
 
-    @if(in_array($status['state'] ?? null, ['queued', 'running'], true))
+    @if(in_array($status['state'] ?? null, \App\Services\ScreenshotFeatureService::STATES_IN_PROGRESS, true))
         <div class="alert alert--info" data-screenshot-status>
             <p><strong>Working…</strong> {{ $status['message'] ?? '' }}</p>
             <p>This page will refresh automatically when the operation completes.</p>
         </div>
         <script>
             (function () {
+                let intervalId = null;
                 const poll = () => fetch(@json(route('settings.screenshots.status')), {headers: {'Accept': 'application/json'}})
                     .then(r => r.json())
                     .then(data => {
                         const state = data.status.state;
-                        if (state === 'success' || state === 'failed' || state === 'idle') {
+                        if (state === 'success' || state === 'failed' || state === 'idle' || state === 'stuck') {
+                            clearInterval(intervalId);
                             window.location.reload();
                         }
                     })
                     .catch(() => {});
-                setInterval(poll, 2000);
+                intervalId = setInterval(poll, 2000);
             })();
         </script>
     @endif

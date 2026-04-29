@@ -33,6 +33,66 @@ describe('flag toggle', function () {
         $this->patch(route('settings.screenshots.update'), ['enabled' => '1'])
             ->assertForbidden();
     });
+
+    it('auto-installs the toolchain when enabling on a system without it', function () {
+        Queue::fake();
+
+        $feature = Mockery::mock(ScreenshotFeatureService::class)->makePartial();
+        $feature->shouldReceive('isInstalled')->andReturn(false);
+        app()->instance(ScreenshotFeatureService::class, $feature);
+
+        $this->patch(route('settings.screenshots.update'), ['enabled' => '1'])
+            ->assertRedirect(route('settings'))
+            ->assertSessionHas('success', fn ($msg) => str_contains($msg, 'Installing the toolchain'));
+
+        expect(AppSetting::getValue('screenshots_enabled'))->toBe('true');
+        Queue::assertPushed(InstallScreenshotsJob::class);
+    });
+
+    it('does not auto-install when the toolchain is already installed', function () {
+        Queue::fake();
+
+        $feature = Mockery::mock(ScreenshotFeatureService::class)->makePartial();
+        $feature->shouldReceive('isInstalled')->andReturn(true);
+        app()->instance(ScreenshotFeatureService::class, $feature);
+
+        $this->patch(route('settings.screenshots.update'), ['enabled' => '1'])
+            ->assertRedirect(route('settings'))
+            ->assertSessionHas('success', 'Screenshots enabled.');
+
+        Queue::assertNotPushed(InstallScreenshotsJob::class);
+    });
+
+    it('does not auto-install when disabling', function () {
+        Queue::fake();
+
+        $feature = Mockery::mock(ScreenshotFeatureService::class)->makePartial();
+        $feature->shouldReceive('isInstalled')->andReturn(false);
+        app()->instance(ScreenshotFeatureService::class, $feature);
+
+        $this->patch(route('settings.screenshots.update'), ['enabled' => '0'])
+            ->assertRedirect(route('settings'))
+            ->assertSessionHas('success', 'Screenshots disabled.');
+
+        Queue::assertNotPushed(InstallScreenshotsJob::class);
+    });
+
+    it('skips auto-install when another operation is already in progress', function () {
+        Queue::fake();
+
+        // Pre-reserve to simulate an in-flight install/uninstall.
+        app(ScreenshotFeatureService::class)->tryReserve('uninstall');
+
+        $feature = Mockery::mock(ScreenshotFeatureService::class)->makePartial();
+        $feature->shouldReceive('isInstalled')->andReturn(false);
+        app()->instance(ScreenshotFeatureService::class, $feature);
+
+        $this->patch(route('settings.screenshots.update'), ['enabled' => '1'])
+            ->assertRedirect(route('settings'))
+            ->assertSessionHas('success', 'Screenshots enabled.');
+
+        Queue::assertNotPushed(InstallScreenshotsJob::class);
+    });
 });
 
 describe('install/uninstall dispatch', function () {

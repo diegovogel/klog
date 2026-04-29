@@ -51,17 +51,16 @@ class InstallClippingScreenshots extends Command
         //    We can't test in-process because composer require ran in a separate
         //    shell and this process's autoloader is stale. A subprocess gets a
         //    fresh autoloader that knows about the newly installed package.
+        //    A dedicated artisan command (rather than tinker --execute) keeps
+        //    real exception messages in stdout instead of being swallowed by
+        //    psysh's BreakException exit machinery.
         $this->info('Verifying screenshot pipeline...');
 
-        // Use exit() so a `false` return from testPipeline becomes a
-        // non-zero subprocess exit code that we can detect here. Otherwise
-        // tinker would happily print `false` and exit 0, masking the failure.
-        $result = Process::path(base_path())->run(
-            'php artisan tinker --execute="exit(app(App\\Services\\ScreenshotService::class)->testPipeline() ? 0 : 1);"'
-        );
+        $result = Process::path(base_path())->run('php artisan clippings:verify-pipeline');
 
         if ($result->failed()) {
-            $this->error('Pipeline test failed: '.($result->errorOutput() ?: $result->output()));
+            $this->error('Pipeline test failed:');
+            $this->line(trim($result->output()."\n".$result->errorOutput()));
 
             return self::FAILURE;
         }
