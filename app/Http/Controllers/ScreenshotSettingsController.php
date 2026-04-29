@@ -18,6 +18,23 @@ class ScreenshotSettingsController extends Controller
         $enabled = $request->boolean('enabled');
         $this->feature->setEnabled($enabled);
 
+        // Enabling implicitly requests the toolchain. If it's missing, kick
+        // off an install so the admin doesn't have to click a second button.
+        // The autoEnable flag lets the queued job no-op cleanly if the admin
+        // toggles the feature off again before the worker picks it up.
+        // Skip on the sync queue driver: dispatch() would run the job inline
+        // inside this PATCH request, blocking the response on composer/npm
+        // for minutes. The manual Install button keeps that explicit-opt-in
+        // path; we don't want a checkbox toggle to silently take it.
+        if ($enabled && ! $this->feature->isInstalled()
+            && config('queue.default') !== 'sync'
+            && $this->feature->tryReserve('install')) {
+            InstallScreenshotsJob::dispatch(autoEnable: true);
+
+            return redirect()->route('settings')
+                ->with('success', 'Screenshots enabled. Installing the toolchain now — this may take a minute.');
+        }
+
         return redirect()->route('settings')
             ->with('success', 'Screenshots '.($enabled ? 'enabled' : 'disabled').'.');
     }

@@ -60,16 +60,17 @@ describe('clippings:install-screenshots', function () {
         Process::fake([
             'composer require spatie/browsershot' => Process::result(exitCode: 0),
             'npm install puppeteer' => Process::result(exitCode: 0),
-            'php artisan tinker*' => Process::result(
-                output: '',
-                errorOutput: 'Chromium not found',
+            'php artisan clippings:verify-pipeline' => Process::result(
+                output: 'Chromium not found at /path/to/chrome',
+                errorOutput: '',
                 exitCode: 1,
             ),
         ]);
 
         $this->artisan('clippings:install-screenshots')
             ->expectsOutput('Verifying screenshot pipeline...')
-            ->expectsOutputToContain('Pipeline test failed')
+            ->expectsOutput('Pipeline test failed:')
+            ->expectsOutputToContain('Chromium not found at /path/to/chrome')
             ->assertFailed();
     });
 
@@ -77,7 +78,7 @@ describe('clippings:install-screenshots', function () {
         Process::fake([
             'composer require spatie/browsershot' => Process::result(exitCode: 0),
             'npm install puppeteer' => Process::result(exitCode: 0),
-            'php artisan tinker*' => Process::result(exitCode: 0),
+            'php artisan clippings:verify-pipeline' => Process::result(exitCode: 0),
         ]);
 
         $this->artisan('clippings:install-screenshots')
@@ -88,7 +89,7 @@ describe('clippings:install-screenshots', function () {
 
     it('skips already installed packages', function () {
         Process::fake([
-            'php artisan tinker*' => Process::result(exitCode: 0),
+            'php artisan clippings:verify-pipeline' => Process::result(exitCode: 0),
         ]);
 
         $this->artisan('clippings:install-screenshots')
