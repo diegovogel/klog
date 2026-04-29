@@ -35,6 +35,7 @@ describe('flag toggle', function () {
 
     it('auto-installs the toolchain when enabling on a system without it', function () {
         Queue::fake();
+        config(['queue.default' => 'database']);
 
         $feature = Mockery::mock(ScreenshotFeatureService::class)->makePartial();
         $feature->shouldReceive('isInstalled')->andReturn(false);
@@ -76,8 +77,24 @@ describe('flag toggle', function () {
         Queue::assertNotPushed(InstallScreenshotsJob::class);
     });
 
+    it('skips auto-install on the sync queue driver to avoid blocking the request', function () {
+        Queue::fake();
+        config(['queue.default' => 'sync']);
+
+        $feature = Mockery::mock(ScreenshotFeatureService::class)->makePartial();
+        $feature->shouldReceive('isInstalled')->andReturn(false);
+        app()->instance(ScreenshotFeatureService::class, $feature);
+
+        $this->patch(route('settings.screenshots.update'), ['enabled' => '1'])
+            ->assertRedirect(route('settings'))
+            ->assertSessionHas('success', 'Screenshots enabled.');
+
+        Queue::assertNotPushed(InstallScreenshotsJob::class);
+    });
+
     it('skips auto-install when another operation is already in progress', function () {
         Queue::fake();
+        config(['queue.default' => 'database']);
 
         // Pre-reserve to simulate an in-flight install/uninstall.
         app(ScreenshotFeatureService::class)->tryReserve('uninstall');

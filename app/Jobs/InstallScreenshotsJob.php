@@ -9,6 +9,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Process;
 
 class InstallScreenshotsJob implements ShouldQueue
 {
@@ -62,17 +63,19 @@ class InstallScreenshotsJob implements ShouldQueue
 
     private function rollBack(ScreenshotFeatureService $feature, bool $hadComposerPkg, bool $hadNpmPkg, string $reason): void
     {
-        // Only run the unconditional uninstall command when neither package
-        // existed before this attempt — i.e. it was a true fresh install
-        // and removing both is equivalent to removing only what we added.
-        // Any partial prior state is left intact so a failed attempt can't
-        // delete a package the admin had already installed by hand.
-        if (! $hadComposerPkg && ! $hadNpmPkg) {
-            try {
-                Artisan::call('clippings:uninstall-screenshots');
-            } catch (\Throwable) {
-                // best-effort rollback
+        // Remove only the packages this run actually added — i.e. ones that
+        // were absent at start but present now. That preserves any partial
+        // prior state the admin had set up by hand, while still cleaning
+        // up the half-step we just took before failing verification.
+        try {
+            if (! $hadComposerPkg && $this->composerHasPackage('spatie/browsershot')) {
+                Process::path(base_path())->run('composer remove spatie/browsershot');
             }
+            if (! $hadNpmPkg && $this->npmHasPackage('puppeteer')) {
+                Process::path(base_path())->run('npm uninstall puppeteer');
+            }
+        } catch (\Throwable) {
+            // best-effort rollback
         }
 
         $feature->markStatus('failed', $reason, 'install');

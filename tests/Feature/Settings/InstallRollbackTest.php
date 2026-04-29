@@ -4,6 +4,7 @@ use App\Jobs\InstallScreenshotsJob;
 use App\Services\ScreenshotFeatureService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Process;
 
 beforeEach(function () {
     $this->originalComposerJson = File::get(base_path('composer.json'));
@@ -15,75 +16,128 @@ afterEach(function () {
     File::put(base_path('package.json'), $this->originalPackageJson);
 });
 
-function withPackagesPresent(bool $composer, bool $npm): void
+function setComposerHas(bool $present): void
 {
-    $composerJson = json_decode(test()->originalComposerJson, true);
-    if ($composer) {
-        $composerJson['require']['spatie/browsershot'] = '*';
+    $composer = json_decode(test()->originalComposerJson, true);
+    if ($present) {
+        $composer['require']['spatie/browsershot'] = '*';
     } else {
-        unset($composerJson['require']['spatie/browsershot'], $composerJson['require-dev']['spatie/browsershot']);
+        unset($composer['require']['spatie/browsershot'], $composer['require-dev']['spatie/browsershot']);
     }
-    File::put(base_path('composer.json'), json_encode($composerJson, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-
-    $packageJson = json_decode(test()->originalPackageJson, true);
-    if ($npm) {
-        $packageJson['dependencies']['puppeteer'] = '*';
-    } else {
-        unset($packageJson['dependencies']['puppeteer'], $packageJson['devDependencies']['puppeteer']);
-    }
-    File::put(base_path('package.json'), json_encode($packageJson, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+    File::put(base_path('composer.json'), json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 }
 
-it('does NOT roll back when both packages were already installed before the run', function () {
-    withPackagesPresent(composer: true, npm: true);
+function setNpmHas(bool $present): void
+{
+    $package = json_decode(test()->originalPackageJson, true);
+    if ($present) {
+        $package['dependencies']['puppeteer'] = '*';
+    } else {
+        unset($package['dependencies']['puppeteer'], $package['devDependencies']['puppeteer']);
+    }
+    File::put(base_path('package.json'), json_encode($package, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+}
+
+function fakeFailingInstall(): void
+{
+    Artisan::shouldReceive('call')->once()->with('clippings:install-screenshots')->andReturn(1);
+    Artisan::shouldReceive('output')->andReturn('boom');
+}
+
+it('does NOT remove anything when both packages were already installed before the run', function () {
+    setComposerHas(true);
+    setNpmHas(true);
+    Process::fake();
 
     $feature = Mockery::mock(ScreenshotFeatureService::class)->makePartial();
     $feature->shouldReceive('markStatus')->withAnyArgs();
 
-    Artisan::shouldReceive('call')->once()->with('clippings:install-screenshots')->andReturn(1);
-    Artisan::shouldReceive('output')->andReturn('boom');
-    Artisan::shouldNotReceive('call')->with('clippings:uninstall-screenshots');
+    fakeFailingInstall();
 
     (new InstallScreenshotsJob)->handle($feature);
+
+    Process::assertNothingRan();
 });
 
-it('does NOT roll back when only the composer package was already installed', function () {
-    withPackagesPresent(composer: true, npm: false);
+it('does NOT remove anything when only the composer package was already installed and the install added nothing new', function () {
+    setComposerHas(true);
+    setNpmHas(false);
+    Process::fake();
 
     $feature = Mockery::mock(ScreenshotFeatureService::class)->makePartial();
     $feature->shouldReceive('markStatus')->withAnyArgs();
 
-    Artisan::shouldReceive('call')->once()->with('clippings:install-screenshots')->andReturn(1);
-    Artisan::shouldReceive('output')->andReturn('boom');
-    Artisan::shouldNotReceive('call')->with('clippings:uninstall-screenshots');
+    fakeFailingInstall();
 
     (new InstallScreenshotsJob)->handle($feature);
+
+    Process::assertNothingRan();
 });
 
-it('does NOT roll back when only the npm package was already installed', function () {
-    withPackagesPresent(composer: false, npm: true);
+it('removes only the puppeteer package when the install added it on top of an existing composer install', function () {
+    setComposerHas(true);
+    setNpmHas(false);
+    Process::fake();
 
     $feature = Mockery::mock(ScreenshotFeatureService::class)->makePartial();
     $feature->shouldReceive('markStatus')->withAnyArgs();
 
-    Artisan::shouldReceive('call')->once()->with('clippings:install-screenshots')->andReturn(1);
-    Artisan::shouldReceive('output')->andReturn('boom');
-    Artisan::shouldNotReceive('call')->with('clippings:uninstall-screenshots');
+    Artisan::shouldReceive('call')
+        ->once()
+        ->with('clippings:install-screenshots')
+        ->andReturnUsing(function () {
+            // Simulate the install command adding puppeteer before failing
+            // pipeline verification.
+            setNpmHas(true);
+
+            return 1;
+        });
+    Artisan::shouldReceive('output')->andReturn('pipeline failed');
 
     (new InstallScreenshotsJob)->handle($feature);
+
+    Process::assertRan('npm uninstall puppeteer');
+    Process::assertDidntRun('composer remove spatie/browsershot');
 });
 
-it('rolls back when neither package was present and the install failed', function () {
-    withPackagesPresent(composer: false, npm: false);
+it('removes both packages when neither was present before and both were added', function () {
+    setComposerHas(false);
+    setNpmHas(false);
+    Process::fake();
 
     $feature = Mockery::mock(ScreenshotFeatureService::class)->makePartial();
     $feature->shouldReceive('markStatus')->withAnyArgs();
 
-    Artisan::shouldReceive('call')->once()->with('clippings:install-screenshots')->andReturn(1);
-    Artisan::shouldReceive('output')->andReturn('boom');
-    Artisan::shouldReceive('call')->once()->with('clippings:uninstall-screenshots')->andReturn(0);
+    Artisan::shouldReceive('call')
+        ->once()
+        ->with('clippings:install-screenshots')
+        ->andReturnUsing(function () {
+            setComposerHas(true);
+            setNpmHas(true);
+
+            return 1;
+        });
+    Artisan::shouldReceive('output')->andReturn('pipeline failed');
 
     (new InstallScreenshotsJob)->handle($feature);
+
+    Process::assertRan('composer remove spatie/browsershot');
+    Process::assertRan('npm uninstall puppeteer');
+});
+
+it('removes nothing when neither package was present before and the install failed before adding anything', function () {
+    setComposerHas(false);
+    setNpmHas(false);
+    Process::fake();
+
+    $feature = Mockery::mock(ScreenshotFeatureService::class)->makePartial();
+    $feature->shouldReceive('markStatus')->withAnyArgs();
+
+    fakeFailingInstall();
+
+    (new InstallScreenshotsJob)->handle($feature);
+
+    Process::assertNothingRan();
 });
 
 it('skips installing when auto-enable was undone before the worker picked up the job', function () {
@@ -99,7 +153,8 @@ it('skips installing when auto-enable was undone before the worker picked up the
 });
 
 it('still installs when auto-enable is set and the feature is still enabled', function () {
-    withPackagesPresent(composer: true, npm: true);
+    setComposerHas(true);
+    setNpmHas(true);
 
     $feature = Mockery::mock(ScreenshotFeatureService::class)->makePartial();
     $feature->shouldReceive('isEnabled')->andReturn(true);
