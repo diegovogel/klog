@@ -169,43 +169,50 @@ Route::middleware(['auth', 'user-active'])->group(function () use ($demoWriteThr
 
         Route::get('settings', [SettingsController::class, 'show'])
             ->name('settings');
-
-        // Member self-service
-        Route::patch('settings/account', [AccountSettingsController::class, 'update'])
-            ->name('settings.account.update');
-        Route::patch('settings/password', [AccountSettingsController::class, 'updatePassword'])
-            ->name('settings.password.update');
-        Route::post('settings/log-out-other-devices', [AccountSettingsController::class, 'logOutOtherDevices'])
-            ->name('settings.log-out-other-devices');
-
-        Route::post('settings/two-factor/enable', [TwoFactorSettingsController::class, 'enable'])
-            ->name('two-factor.enable');
-        Route::post('settings/two-factor/disable', [TwoFactorSettingsController::class, 'disable'])
-            ->name('two-factor.disable');
-        Route::post('settings/two-factor/recovery-codes', [TwoFactorSettingsController::class, 'regenerateRecoveryCodes'])
-            ->name('two-factor.recovery-codes');
         Route::get('settings/two-factor/authenticator/setup', [TwoFactorSettingsController::class, 'showAuthenticatorSetup'])
             ->name('two-factor.authenticator.setup');
-        Route::post('settings/two-factor/authenticator/confirm', [TwoFactorSettingsController::class, 'confirmAuthenticator'])
-            ->name('two-factor.authenticator.confirm');
+
+        // Member self-service. Every mutation is blocked on the shared demo
+        // account: the login page publishes the demo password, so otherwise any
+        // visitor could change the credentials, enable 2FA, or cycle the session
+        // and lock everyone out until the next reset. block-in-demo is a no-op
+        // in production, so the normal single-user flows are unaffected.
+        Route::middleware('block-in-demo')->group(function () {
+            Route::patch('settings/account', [AccountSettingsController::class, 'update'])
+                ->name('settings.account.update');
+            Route::patch('settings/password', [AccountSettingsController::class, 'updatePassword'])
+                ->name('settings.password.update');
+            Route::post('settings/log-out-other-devices', [AccountSettingsController::class, 'logOutOtherDevices'])
+                ->name('settings.log-out-other-devices');
+
+            Route::post('settings/two-factor/enable', [TwoFactorSettingsController::class, 'enable'])
+                ->name('two-factor.enable');
+            Route::post('settings/two-factor/disable', [TwoFactorSettingsController::class, 'disable'])
+                ->name('two-factor.disable');
+            Route::post('settings/two-factor/recovery-codes', [TwoFactorSettingsController::class, 'regenerateRecoveryCodes'])
+                ->name('two-factor.recovery-codes');
+            Route::post('settings/two-factor/authenticator/confirm', [TwoFactorSettingsController::class, 'confirmAuthenticator'])
+                ->name('two-factor.authenticator.confirm');
+        });
 
         // Admin-only
         Route::middleware('admin')->group(function () {
-            // Safe in demo mode.
-            Route::patch('settings/maintainer-email', [AppSettingsController::class, 'updateMaintainerEmail'])
-                ->name('settings.maintainer-email.update');
-            Route::patch('settings/two-factor-expiration', [AppSettingsController::class, 'updateTwoFactorExpiration'])
-                ->name('settings.two-factor-expiration.update');
-            Route::patch('settings/screenshots', [ScreenshotSettingsController::class, 'updateFlag'])
-                ->name('settings.screenshots.update');
             Route::get('settings/screenshots/status', [ScreenshotSettingsController::class, 'status'])
                 ->name('settings.screenshots.status');
 
-            // Unsafe on a public demo: screenshot install/uninstall shell out to
-            // composer/npm, invites send mail, and user state changes can lock out
-            // the shared demo account. block-in-demo is a no-op in production, so
-            // grouping here keeps new demo-unsafe admin routes guarded by default.
+            // Every admin mutation is unsafe on a public demo: maintainer-email
+            // reroutes error notifications, the screenshots toggle/install shell
+            // out to composer/npm, invites send mail, and user-state changes can
+            // lock out the shared demo account. Grouping under block-in-demo (a
+            // no-op in production) keeps new demo-unsafe admin routes guarded by
+            // default rather than relying on each one remembering the middleware.
             Route::middleware('block-in-demo')->group(function () {
+                Route::patch('settings/maintainer-email', [AppSettingsController::class, 'updateMaintainerEmail'])
+                    ->name('settings.maintainer-email.update');
+                Route::patch('settings/two-factor-expiration', [AppSettingsController::class, 'updateTwoFactorExpiration'])
+                    ->name('settings.two-factor-expiration.update');
+                Route::patch('settings/screenshots', [ScreenshotSettingsController::class, 'updateFlag'])
+                    ->name('settings.screenshots.update');
                 Route::post('settings/screenshots/install', [ScreenshotSettingsController::class, 'install'])
                     ->name('settings.screenshots.install');
                 Route::post('settings/screenshots/uninstall', [ScreenshotSettingsController::class, 'uninstall'])

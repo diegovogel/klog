@@ -65,6 +65,54 @@ describe('block-in-demo guardrail', function () {
 
         Queue::assertPushed(InstallScreenshotsJob::class);
     });
+
+    // Every settings mutation must be blocked in demo: the shared demo password
+    // is published on the login page, so an unblocked mutation lets any visitor
+    // lock everyone out or trigger side effects until the next reset.
+    it('blocks every settings mutation in demo mode', function (string $method, string $routeName) {
+        config(['klog.is_demo' => true]);
+
+        $this->from(route('settings'))
+            ->{$method}(route($routeName))
+            ->assertRedirect(route('settings'))
+            ->assertSessionHas('error', 'This action is disabled in the demo.');
+    })->with([
+        'account' => ['patch', 'settings.account.update'],
+        'password' => ['patch', 'settings.password.update'],
+        'log-out-other-devices' => ['post', 'settings.log-out-other-devices'],
+        '2fa enable' => ['post', 'two-factor.enable'],
+        '2fa disable' => ['post', 'two-factor.disable'],
+        '2fa recovery codes' => ['post', 'two-factor.recovery-codes'],
+        '2fa authenticator confirm' => ['post', 'two-factor.authenticator.confirm'],
+        'maintainer email' => ['patch', 'settings.maintainer-email.update'],
+        'two-factor expiration' => ['patch', 'settings.two-factor-expiration.update'],
+        'screenshots toggle' => ['patch', 'settings.screenshots.update'],
+    ]);
+
+    it('does not change the shared password in demo mode (lock-out vector)', function () {
+        config(['klog.is_demo' => true]);
+        $original = $this->admin->password;
+
+        $this->from(route('settings'))->patch(route('settings.password.update'), [
+            'current_password' => 'password',
+            'password' => 'hijacked-password',
+            'password_confirmation' => 'hijacked-password',
+        ])->assertRedirect(route('settings'));
+
+        expect($this->admin->fresh()->password)->toBe($original);
+    });
+
+    it('does not auto-install screenshot packages via the toggle in demo mode', function () {
+        config(['klog.is_demo' => true, 'queue.default' => 'database']);
+        Queue::fake();
+
+        $this->from(route('settings'))
+            ->patch(route('settings.screenshots.update'), ['enabled' => '1'])
+            ->assertRedirect(route('settings'))
+            ->assertSessionHas('error', 'This action is disabled in the demo.');
+
+        Queue::assertNotPushed(InstallScreenshotsJob::class);
+    });
 });
 
 describe('demo:reset safety guard', function () {
