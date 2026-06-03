@@ -8,7 +8,7 @@
                 <p class="login-card__tagline">Your personal memory keeper</p>
             </div>
 
-            @if (config('klog.is_demo'))
+            @if ($demoLoginAvailable)
                 <div class="demo-login">
                     <form method="POST" action="{{ route('demo.login') }}">
                         @csrf
@@ -36,7 +36,7 @@
                         autocomplete="email"
                         required
                         autofocus
-                        value="{{ old('email', config('klog.is_demo') ? config('klog.demo_email') : '') }}"
+                        value="{{ old('email', $demoLoginAvailable ? config('klog.demo_email') : '') }}"
                     >
                     @error('email')
                     <span class="form-error">{{ $message }}</span>
@@ -52,7 +52,7 @@
                         class="form-input"
                         autocomplete="current-password"
                         required
-                        value="{{ config('klog.is_demo') ? config('klog.demo_password') : '' }}"
+                        value="{{ $demoLoginAvailable ? config('klog.demo_password') : '' }}"
                     >
                     @error('password')
                     <span class="form-error">{{ $message }}</span>

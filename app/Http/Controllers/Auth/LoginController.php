@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,7 +14,14 @@ class LoginController extends Controller
 {
     public function showLoginForm(): View
     {
-        return view('auth.login');
+        // Only advertise the one-click demo login (and pre-fill the credentials)
+        // once the demo account actually exists, so a demo instance that hasn't
+        // been seeded yet shows a normal, working login form instead of a dead
+        // button. The demo banner itself stays tied to the demo flag.
+        $demoLoginAvailable = config('klog.is_demo')
+            && User::active()->where('email', config('klog.demo_email'))->exists();
+
+        return view('auth.login', ['demoLoginAvailable' => $demoLoginAvailable]);
     }
 
     public function login(LoginRequest $request): RedirectResponse

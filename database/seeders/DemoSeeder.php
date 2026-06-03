@@ -36,9 +36,16 @@ class DemoSeeder extends Seeder
             'role' => UserRole::ADMIN,
         ]);
 
+        // Keep the fictional co-parent's email distinct from the (configurable)
+        // demo email so a custom DEMO_EMAIL can't collide with this fixture and
+        // trip the unique constraint, which would fail demo:reset mid-seed.
+        $coParentEmail = config('klog.demo_email') === 'alex@klog.app'
+            ? 'alex.rivera@klog.app'
+            : 'alex@klog.app';
+
         $alex = User::create([
             'name' => 'Alex Rivera',
-            'email' => 'alex@klog.app',
+            'email' => $coParentEmail,
             'password' => Hash::make(Str::random(32)),
             'role' => UserRole::MEMBER,
         ]);

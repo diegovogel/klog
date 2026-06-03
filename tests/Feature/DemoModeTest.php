@@ -1,10 +1,13 @@
 <?php
 
+use App\Enums\UserRole;
 use App\Jobs\InstallScreenshotsJob;
 use App\Models\User;
+use Database\Seeders\DemoSeeder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Storage;
 
 describe('one-click demo login', function () {
     it('404s when the app is not in demo mode', function () {
@@ -37,6 +40,31 @@ describe('one-click demo login', function () {
 
         $this->post(route('demo.login'))->assertStatus(503);
         $this->assertGuest();
+    });
+
+    it('hides the one-click panel until the demo account exists', function () {
+        config(['klog.is_demo' => true]);
+
+        $this->get(route('login'))->assertOk()->assertDontSee('Enter demo');
+    });
+
+    it('shows the one-click panel once the demo account exists', function () {
+        config(['klog.is_demo' => true]);
+        User::factory()->admin()->create(['email' => config('klog.demo_email')]);
+
+        $this->get(route('login'))->assertOk()->assertSee('Enter demo');
+    });
+});
+
+describe('demo seeding', function () {
+    it('seeds without collision when DEMO_EMAIL matches the co-parent fixture', function () {
+        config(['klog.demo_email' => 'alex@klog.app']);
+        Storage::fake('local');
+
+        $this->seed(DemoSeeder::class);
+
+        expect(User::count())->toBe(2)
+            ->and(User::where('email', 'alex@klog.app')->first()->role)->toBe(UserRole::ADMIN);
     });
 });
 
