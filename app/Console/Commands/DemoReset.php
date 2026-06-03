@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Database\Seeders\DemoSeeder;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 class DemoReset extends Command
@@ -27,8 +28,34 @@ class DemoReset extends Command
             return self::FAILURE;
         }
 
-        // Bail on the first failing step so a partial/empty database is never
-        // reported as a healthy reset (the scheduler keys off this exit code).
+        // Serialize all invocations (daily schedule, deploy hook, manual runs)
+        // so two resets can't run migrate:fresh against the same SQLite file and
+        // uploads dir at once. Use the file store: the database cache table is
+        // wiped by migrate:fresh mid-command, which would drop a DB-backed lock.
+        $lock = Cache::store('file')->lock('demo-reset', 600);
+
+        if (! $lock->get()) {
+            $this->warn('Another demo:reset is already running; skipping.');
+
+            return self::SUCCESS;
+        }
+
+        try {
+            return $this->rebuild();
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
+     * Take the site offline, rebuild and reseed, then bring it back — but only
+     * on success. On failure the app is left in maintenance mode rather than
+     * served with an empty/half-seeded database (which would also crash /login,
+     * since it now queries the users table to decide whether to show the demo
+     * panel). Each step's non-zero exit aborts the rest.
+     */
+    private function rebuild(): int
+    {
         $steps = [
             ['Clearing demo media…', function (): bool {
                 // Best-effort: a fresh instance has no uploads dir yet.
@@ -41,25 +68,19 @@ class DemoReset extends Command
             ['Rebuilding search index…', fn (): bool => $this->call('search:reindex') === self::SUCCESS],
         ];
 
-        // migrate:fresh drops every table while the HTTP app stays live, so take
-        // the demo offline for the few seconds the rebuild takes. Without this,
-        // concurrent visitors hit "no such table" errors mid-reset every day.
         $this->call('down', ['--retry' => 5]);
 
-        try {
-            foreach ($steps as [$message, $step]) {
-                $this->info($message);
+        foreach ($steps as [$message, $step]) {
+            $this->info($message);
 
-                if (! $step()) {
-                    $this->error("demo:reset aborted at: {$message}");
+            if (! $step()) {
+                $this->error("demo:reset aborted at: {$message}. Leaving the app in maintenance mode.");
 
-                    return self::FAILURE;
-                }
+                return self::FAILURE;
             }
-        } finally {
-            $this->call('up');
         }
 
+        $this->call('up');
         $this->info('Demo reset complete.');
 
         return self::SUCCESS;

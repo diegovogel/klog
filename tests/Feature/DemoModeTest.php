@@ -6,6 +6,7 @@ use App\Models\User;
 use Database\Seeders\DemoSeeder;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
@@ -183,6 +184,23 @@ describe('demo:reset safety guard', function () {
         $this->artisan('demo:reset')
             ->expectsOutputToContain('only available when IS_DEMO=true')
             ->assertExitCode(1);
+    });
+
+    it('skips when another reset already holds the lock', function () {
+        config(['klog.is_demo' => true]);
+
+        // Hold the lock so the command can't acquire it and must skip the
+        // destructive rebuild entirely (so this test never runs migrate:fresh).
+        $lock = Cache::store('file')->lock('demo-reset', 600);
+        expect($lock->get())->toBeTrue();
+
+        try {
+            $this->artisan('demo:reset')
+                ->expectsOutputToContain('already running')
+                ->assertExitCode(0);
+        } finally {
+            $lock->release();
+        }
     });
 });
 
