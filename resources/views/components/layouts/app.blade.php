@@ -20,6 +20,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
+<x-demo-banner />
 <div class="layout">
     <header class="site-header">
         <a href="/" class="site-header__logo">{{ config('app.name', 'Klog') }}</a>

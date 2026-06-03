@@ -13,6 +13,10 @@
         <div class="alert alert--success">{{ session('success') }}</div>
     @endif
 
+    @if(session('error'))
+        <div class="alert alert--error">{{ session('error') }}</div>
+    @endif
+
     @php($adminErrorKeys = ['invite', 'role', 'deactivate', 'screenshots'])
     @if(collect($adminErrorKeys)->contains(fn ($key) => $errors->has($key)))
         <div class="alert alert--error">

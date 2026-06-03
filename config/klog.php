@@ -4,6 +4,28 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Demo Mode
+    |--------------------------------------------------------------------------
+    |
+    | When true, the app runs as a public, throwaway demo: a banner is shown,
+    | a one-click login is offered, destructive admin actions are blocked, and
+    | the `demo:reset` command is allowed to wipe and re-seed the database.
+    | Defaults to false so production behaviour is never affected.
+    |
+    */
+
+    'is_demo' => (bool) env('IS_DEMO', false),
+
+    /*
+    | Credentials for the shared demo account. Shown on the login screen and
+    | used by the one-click login and the DemoSeeder so they always agree.
+    */
+
+    'demo_email' => env('DEMO_EMAIL', 'demo@klog.app'),
+    'demo_password' => env('DEMO_PASSWORD', 'demo1234'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Maintainer Email
     |--------------------------------------------------------------------------
     |
@@ -51,7 +73,11 @@ return [
 
     'uploads' => [
         'chunk_size' => (int) env('UPLOAD_CHUNK_SIZE', 2 * 1024 * 1024),
-        'max_file_size' => (int) env('UPLOAD_MAX_FILE_SIZE', 500) * 1024 * 1024,
+        // Demo mode defaults to a small cap so a single upload stays within the
+        // demo-chunks rate limiter (a 25 MB file is ~13 chunks, well under the
+        // per-minute ceiling); a 500 MB default there would need ~250 chunks and
+        // reliably trip the limiter. Production keeps the 500 MB default.
+        'max_file_size' => (int) env('UPLOAD_MAX_FILE_SIZE', env('IS_DEMO', false) ? 25 : 500) * 1024 * 1024,
         'session_ttl' => (int) env('UPLOAD_SESSION_TTL', 24),
     ],
 

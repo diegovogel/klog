@@ -13,14 +13,27 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command('clippings:fetch-content')->dailyAt('01:00');
+// Skipped in demo mode: visitors can save arbitrary clipping URLs, and the
+// fetcher pulls them server-side without SSRF host validation. The demo's own
+// clippings are seeded with content already, so nothing needs fetching there.
+if (! config('klog.is_demo')) {
+    Schedule::command('clippings:fetch-content')->dailyAt('01:00');
+}
+
+if (config('klog.is_demo')) {
+    // Daily refresh only. Initial seeding happens at deploy time: the Forge
+    // deploy script runs `php artisan demo:reset`, so the demo account exists
+    // before /login advertises it rather than waiting for the first 05:00 run.
+    Schedule::command('demo:reset')->dailyAt('05:00');
+}
 
 if (class_exists(\Spatie\Browsershot\Browsershot::class)) {
     // Use Schedule::command so the scheduler gets the artisan exit code —
     // Schedule::call wrapping Artisan::call would always record success.
     Schedule::command('clippings:screenshot')
         ->dailyAt('02:00')
-        ->when(fn () => app(ScreenshotFeatureService::class)->isEnabled()
+        ->when(fn () => ! config('klog.is_demo')
+            && app(ScreenshotFeatureService::class)->isEnabled()
             && app(ScreenshotFeatureService::class)->isInstalled());
 }
 

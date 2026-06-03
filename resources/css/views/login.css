@@ -37,3 +37,25 @@
     color: var(--klog-text-muted);
     margin-block-start: var(--klog-space-xs);
 }
+
+.demo-login {
+    margin-block-end: var(--klog-space-lg);
+    padding-block-end: var(--klog-space-lg);
+    border-block-end: 1px solid var(--klog-border);
+    text-align: center;
+}
+
+.demo-login__hint {
+    font-size: 0.8125rem;
+    color: var(--klog-text-muted);
+    margin-block-start: var(--klog-space-md);
+    margin-block-end: 0;
+}
+
+.demo-login__hint code {
+    font-size: 0.8125rem;
+    color: var(--klog-text-secondary);
+    background: var(--klog-bg-subtle);
+    padding: 0.05rem 0.3rem;
+    border-radius: var(--klog-radius);
+}
