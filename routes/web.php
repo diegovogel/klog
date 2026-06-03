@@ -167,7 +167,7 @@ Route::middleware(['auth', 'user-active'])->group(function () {
             $memory->deleteWithRelations();
 
             return redirect('/')->with('success', 'Memory deleted.');
-        })->name('memories.destroy');
+        })->middleware('throttle:demo-writes')->name('memories.destroy');
 
         Route::get('settings', [SettingsController::class, 'show'])
             ->name('settings');

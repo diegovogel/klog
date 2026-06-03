@@ -73,7 +73,11 @@ return [
 
     'uploads' => [
         'chunk_size' => (int) env('UPLOAD_CHUNK_SIZE', 2 * 1024 * 1024),
-        'max_file_size' => (int) env('UPLOAD_MAX_FILE_SIZE', 500) * 1024 * 1024,
+        // Demo mode defaults to a small cap so a single upload stays within the
+        // demo-chunks rate limiter (a 25 MB file is ~13 chunks, well under the
+        // per-minute ceiling); a 500 MB default there would need ~250 chunks and
+        // reliably trip the limiter. Production keeps the 500 MB default.
+        'max_file_size' => (int) env('UPLOAD_MAX_FILE_SIZE', env('IS_DEMO', false) ? 25 : 500) * 1024 * 1024,
         'session_ttl' => (int) env('UPLOAD_SESSION_TTL', 24),
     ],
 

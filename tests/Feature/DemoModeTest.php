@@ -137,7 +137,8 @@ describe('demo abuse throttling', function () {
         expect($routes->getByName('uploads.chunk')->gatherMiddleware())->toContain('throttle:demo-chunks')
             ->and($routes->getByName('uploads.init')->gatherMiddleware())->toContain('throttle:demo-writes')
             ->and($routes->getByName('uploads.cancel')->gatherMiddleware())->toContain('throttle:demo-writes')
-            ->and($routes->getByName('memories.store')->gatherMiddleware())->toContain('throttle:demo-writes');
+            ->and($routes->getByName('memories.store')->gatherMiddleware())->toContain('throttle:demo-writes')
+            ->and($routes->getByName('memories.destroy')->gatherMiddleware())->toContain('throttle:demo-writes');
     });
 
     it('makes the demo limiters unlimited outside demo mode', function () {

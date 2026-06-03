@@ -16,6 +16,9 @@ Artisan::command('inspire', function () {
 Schedule::command('clippings:fetch-content')->dailyAt('01:00');
 
 if (config('klog.is_demo')) {
+    // Daily refresh only. Initial seeding happens at deploy time: the Forge
+    // deploy script runs `php artisan demo:reset`, so the demo account exists
+    // before /login advertises it rather than waiting for the first 05:00 run.
     Schedule::command('demo:reset')->dailyAt('05:00');
 }
 
