@@ -37,6 +37,7 @@ php artisan clippings:screenshot             # Capture screenshots for clippings
 php artisan 2fa:install-authenticator        # Install TOTP authenticator packages
 php artisan 2fa:uninstall-authenticator      # Remove authenticator packages, migrate users to email 2FA
 php artisan search:reindex                   # Rebuild the memories_fts search index from scratch
+php artisan demo:reset                       # Public demo only (IS_DEMO=true): wipe & re-seed back to the seeded demo state
 ```
 
 ## Architecture & Design Principles
@@ -133,6 +134,17 @@ php artisan search:reindex                   # Rebuild the memories_fts search i
   if the index ever falls out of sync. The `MemoryObserver` auto-reindexes on save/update/delete/restore;
   callers that mutate relationships (tags, web clippings) without touching the Memory row call
   `$memory->reindexSearch()` explicitly — see `memories.store` route and `Memory::syncTagNames` / `attachTagNames`.
+- **Optional public demo mode (`IS_DEMO`)** — a single env flag turns any instance into a public, throwaway
+  demo (live at `klog-demo.diego.works`), with everything gated behind `config('klog.is_demo')` so production
+  is unaffected by default. It shows a banner, offers one-click login as a shared seeded account
+  (`Auth/DemoLoginController`, only advertised once the account exists), blocks every settings mutation via the
+  `block-in-demo` middleware (`BlockInDemo`), throttles writes per-IP (`demo-writes` / `demo-chunks` rate
+  limiters registered in `AppServiceProvider`, with trusted proxies via `DEMO_TRUSTED_PROXIES`), enforces a
+  smaller upload cap, forces screenshots off, and skips the outbound `clippings:fetch-content` schedule.
+  `DemoSeeder` (separate from `DatabaseSeeder`, invoked only by the reset) seeds a fictional family with bundled
+  people-free photos under `database/seeders/demo-assets/`. `demo:reset` wipes + reseeds (maintenance mode +
+  file-store lock, hard `IS_DEMO` guard) on a configurable cron (`DEMO_RESET_CRON`, default every 2h), and also
+  runs on every deploy.
 
 ## Data Model
 
@@ -204,10 +216,10 @@ issue comment (not a review) starting with "Codex Review: Didn't find any major 
 ## Project Structure
 
 ```
-app/Console/Commands/ — Artisan commands (user:create, user:reset-password, media:migrate-to-private, clippings:*, 2fa:*, search:reindex)
+app/Console/Commands/ — Artisan commands (user:create, user:reset-password, media:migrate-to-private, clippings:*, 2fa:*, search:reindex, demo:reset)
 app/Enums/            — PHP enums (MemoryType, MediaType, MimeType, TwoFactorMethod, ProcessingStatus, UserRole)
-app/Http/Controllers/ — Controllers (Auth/LoginController, Auth/TwoFactorChallengeController, Auth/InviteController, AccountSettingsController, AppSettingsController, ScreenshotSettingsController, SettingsController, TwoFactorSettingsController, UserManagementController, MediaController, UploadController, UrlCheckController, SearchController)
-app/Http/Middleware/  — Custom middleware (EnsureTwoFactorChallenge, EnsureUserActive, RequireAdmin, SecurityHeaders)
+app/Http/Controllers/ — Controllers (Auth/LoginController, Auth/DemoLoginController, Auth/TwoFactorChallengeController, Auth/InviteController, AccountSettingsController, AppSettingsController, ScreenshotSettingsController, SettingsController, TwoFactorSettingsController, UserManagementController, MediaController, UploadController, UrlCheckController, SearchController)
+app/Http/Middleware/  — Custom middleware (EnsureTwoFactorChallenge, EnsureUserActive, RequireAdmin, BlockInDemo, SecurityHeaders)
 app/Http/Requests/    — Form request validation (Auth/*, Settings/*, InitUploadRequest, StoreChunkRequest, SearchRequest, CheckUrlRequest)
 app/Models/           — Eloquent models
 app/Observers/        — Eloquent observers (MemoryObserver for search index sync)
