@@ -21,10 +21,11 @@ if (! config('klog.is_demo')) {
 }
 
 if (config('klog.is_demo')) {
-    // Daily refresh only. Initial seeding happens at deploy time: the Forge
-    // deploy script runs `php artisan demo:reset`, so the demo account exists
-    // before /login advertises it rather than waiting for the first 05:00 run.
-    Schedule::command('demo:reset')->dailyAt('05:00');
+    // Recurring refresh so a visitor never lands on the previous visitor's
+    // leftovers for long. Cadence is env-tunable (DEMO_RESET_CRON, default every
+    // 2 hours) so it can be changed without a code deploy. Initial seeding still
+    // happens at deploy time via the Forge deploy script's `php artisan demo:reset`.
+    Schedule::command('demo:reset')->cron(config('klog.demo_reset_cron'));
 }
 
 if (class_exists(\Spatie\Browsershot\Browsershot::class)) {
