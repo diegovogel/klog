@@ -21,7 +21,7 @@ return [
     | used by the one-click login and the DemoSeeder so they always agree.
     */
 
-    'demo_email' => env('DEMO_EMAIL', 'demo@klog.app'),
+    'demo_email' => env('DEMO_EMAIL', 'demo@example.com'),
     'demo_password' => env('DEMO_PASSWORD', 'demo1234'),
 
     /*

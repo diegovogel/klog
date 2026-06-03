@@ -46,9 +46,9 @@ class DemoSeeder extends Seeder
         // Keep the fictional co-parent's email distinct from the (configurable)
         // demo email so a custom DEMO_EMAIL can't collide with this fixture and
         // trip the unique constraint, which would fail demo:reset mid-seed.
-        $coParentEmail = config('klog.demo_email') === 'alex@klog.app'
-            ? 'alex.rivera@klog.app'
-            : 'alex@klog.app';
+        $coParentEmail = config('klog.demo_email') === 'alex@example.com'
+            ? 'alex.rivera@example.com'
+            : 'alex@example.com';
 
         $alex = User::create([
             'name' => 'Alex Rivera',

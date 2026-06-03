@@ -90,13 +90,13 @@ describe('multipart upload cap', function () {
 
 describe('demo seeding', function () {
     it('seeds without collision when DEMO_EMAIL matches the co-parent fixture', function () {
-        config(['klog.demo_email' => 'alex@klog.app']);
+        config(['klog.demo_email' => 'alex@example.com']);
         Storage::fake('local');
 
         $this->seed(DemoSeeder::class);
 
         expect(User::count())->toBe(2)
-            ->and(User::where('email', 'alex@klog.app')->first()->role)->toBe(UserRole::ADMIN);
+            ->and(User::where('email', 'alex@example.com')->first()->role)->toBe(UserRole::ADMIN);
     });
 });
 
