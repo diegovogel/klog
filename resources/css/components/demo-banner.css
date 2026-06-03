@@ -1,0 +1,17 @@
+.demo-banner {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--klog-primary);
+    color: var(--klog-primary-text);
+    text-align: center;
+    padding: var(--klog-space-sm) var(--klog-space-md);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    box-shadow: var(--klog-shadow-sm);
+}
+
+.demo-banner__text {
+    display: inline-block;
+}

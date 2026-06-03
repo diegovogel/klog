@@ -15,6 +15,10 @@ Artisan::command('inspire', function () {
 
 Schedule::command('clippings:fetch-content')->dailyAt('01:00');
 
+if (config('klog.is_demo')) {
+    Schedule::command('demo:reset')->dailyAt('05:00');
+}
+
 if (class_exists(\Spatie\Browsershot\Browsershot::class)) {
     // Use Schedule::command so the scheduler gets the artisan exit code —
     // Schedule::call wrapping Artisan::call would always record success.

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccountSettingsController;
 use App\Http\Controllers\AppSettingsController;
+use App\Http\Controllers\Auth\DemoLoginController;
 use App\Http\Controllers\Auth\InviteController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\TwoFactorChallengeController;
@@ -59,11 +60,21 @@ Route::middleware('guest')->group(function () {
     Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('login', [LoginController::class, 'login']);
 
+    // One-click login for the public demo. The controller 404s when the app
+    // is not running in demo mode, so this route is inert in production.
+    Route::post('demo/login', [DemoLoginController::class, 'store'])
+        ->middleware('throttle:10,1')
+        ->name('demo.login');
+
     Route::get('invites/{token}', [InviteController::class, 'show'])->name('invites.show');
     Route::post('invites/{token}', [InviteController::class, 'accept'])->name('invites.accept');
 });
 
-Route::middleware(['auth', 'user-active'])->group(function () {
+// In demo mode, throttle write-heavy endpoints to bound abuse. Resolves to an
+// empty (no-op) middleware list in production, so normal behaviour is unchanged.
+$demoWriteThrottle = config('klog.is_demo') ? 'throttle:30,1' : [];
+
+Route::middleware(['auth', 'user-active'])->group(function () use ($demoWriteThrottle) {
     Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
     Route::get('two-factor/challenge', [TwoFactorChallengeController::class, 'show'])
@@ -74,14 +85,16 @@ Route::middleware(['auth', 'user-active'])->group(function () {
         ->middleware('throttle:5,1')
         ->name('two-factor.resend');
 
-    Route::middleware('two-factor')->group(function () {
+    Route::middleware('two-factor')->group(function () use ($demoWriteThrottle) {
         Route::get('media/{filename}', [MediaController::class, 'show'])->name('media.show');
 
         Route::get('url-check', [UrlCheckController::class, 'check'])
             ->middleware('throttle:30,1')
             ->name('url-check');
 
-        Route::post('uploads/init', [UploadController::class, 'init'])->name('uploads.init');
+        Route::post('uploads/init', [UploadController::class, 'init'])
+            ->middleware($demoWriteThrottle)
+            ->name('uploads.init');
         Route::post('uploads/{uploadSession}/chunk', [UploadController::class, 'chunk'])->name('uploads.chunk');
         Route::delete('uploads/{uploadSession}', [UploadController::class, 'cancel'])->name('uploads.cancel');
 
@@ -146,7 +159,7 @@ Route::middleware(['auth', 'user-active'])->group(function () {
             $memory->reindexSearch();
 
             return redirect('/')->with('success', 'Memory saved.');
-        })->name('memories.store');
+        })->middleware($demoWriteThrottle)->name('memories.store');
 
         Route::delete('memories/{memory}', function (Memory $memory) {
             $memory->deleteWithRelations();
@@ -178,30 +191,37 @@ Route::middleware(['auth', 'user-active'])->group(function () {
 
         // Admin-only
         Route::middleware('admin')->group(function () {
+            // Safe in demo mode.
             Route::patch('settings/maintainer-email', [AppSettingsController::class, 'updateMaintainerEmail'])
                 ->name('settings.maintainer-email.update');
             Route::patch('settings/two-factor-expiration', [AppSettingsController::class, 'updateTwoFactorExpiration'])
                 ->name('settings.two-factor-expiration.update');
-
             Route::patch('settings/screenshots', [ScreenshotSettingsController::class, 'updateFlag'])
                 ->name('settings.screenshots.update');
-            Route::post('settings/screenshots/install', [ScreenshotSettingsController::class, 'install'])
-                ->name('settings.screenshots.install');
-            Route::post('settings/screenshots/uninstall', [ScreenshotSettingsController::class, 'uninstall'])
-                ->name('settings.screenshots.uninstall');
             Route::get('settings/screenshots/status', [ScreenshotSettingsController::class, 'status'])
                 ->name('settings.screenshots.status');
 
-            Route::post('settings/users/invite', [UserManagementController::class, 'invite'])
-                ->name('settings.users.invite');
-            Route::post('settings/users/{user}/resend-invite', [UserManagementController::class, 'resendInvite'])
-                ->name('settings.users.resend-invite');
-            Route::patch('settings/users/{user}/role', [UserManagementController::class, 'updateRole'])
-                ->name('settings.users.role.update');
-            Route::post('settings/users/{user}/deactivate', [UserManagementController::class, 'deactivate'])
-                ->name('settings.users.deactivate');
-            Route::post('settings/users/{user}/reactivate', [UserManagementController::class, 'reactivate'])
-                ->name('settings.users.reactivate');
+            // Unsafe on a public demo: screenshot install/uninstall shell out to
+            // composer/npm, invites send mail, and user state changes can lock out
+            // the shared demo account. block-in-demo is a no-op in production, so
+            // grouping here keeps new demo-unsafe admin routes guarded by default.
+            Route::middleware('block-in-demo')->group(function () {
+                Route::post('settings/screenshots/install', [ScreenshotSettingsController::class, 'install'])
+                    ->name('settings.screenshots.install');
+                Route::post('settings/screenshots/uninstall', [ScreenshotSettingsController::class, 'uninstall'])
+                    ->name('settings.screenshots.uninstall');
+
+                Route::post('settings/users/invite', [UserManagementController::class, 'invite'])
+                    ->name('settings.users.invite');
+                Route::post('settings/users/{user}/resend-invite', [UserManagementController::class, 'resendInvite'])
+                    ->name('settings.users.resend-invite');
+                Route::patch('settings/users/{user}/role', [UserManagementController::class, 'updateRole'])
+                    ->name('settings.users.role.update');
+                Route::post('settings/users/{user}/deactivate', [UserManagementController::class, 'deactivate'])
+                    ->name('settings.users.deactivate');
+                Route::post('settings/users/{user}/reactivate', [UserManagementController::class, 'reactivate'])
+                    ->name('settings.users.reactivate');
+            });
         });
     });
 });

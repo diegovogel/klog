@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'two-factor' => \App\Http\Middleware\EnsureTwoFactorChallenge::class,
             'admin' => \App\Http\Middleware\RequireAdmin::class,
             'user-active' => \App\Http\Middleware\EnsureUserActive::class,
+            'block-in-demo' => \App\Http\Middleware\BlockInDemo::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

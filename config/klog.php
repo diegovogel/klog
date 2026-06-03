@@ -4,6 +4,28 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Demo Mode
+    |--------------------------------------------------------------------------
+    |
+    | When true, the app runs as a public, throwaway demo: a banner is shown,
+    | a one-click login is offered, destructive admin actions are blocked, and
+    | the `demo:reset` command is allowed to wipe and re-seed the database.
+    | Defaults to false so production behaviour is never affected.
+    |
+    */
+
+    'is_demo' => (bool) env('IS_DEMO', false),
+
+    /*
+    | Credentials for the shared demo account. Shown on the login screen and
+    | used by the one-click login and the DemoSeeder so they always agree.
+    */
+
+    'demo_email' => env('DEMO_EMAIL', 'demo@klog.app'),
+    'demo_password' => env('DEMO_PASSWORD', 'demo1234'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Maintainer Email
     |--------------------------------------------------------------------------
     |
