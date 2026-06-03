@@ -8,6 +8,7 @@ use App\Enums\UserRole;
 use App\Models\Child;
 use App\Models\Memory;
 use App\Models\User;
+use App\Services\ScreenshotFeatureService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
@@ -29,6 +30,12 @@ class DemoSeeder extends Seeder
 
     public function run(): void
     {
+        // migrate:fresh wipes app_settings and a missing screenshots_enabled
+        // flag defaults to "on", so pin it off here. The demo has no UI path to
+        // change it back, and we don't want the screenshot schedule capturing
+        // the seeded clipping URLs on a public instance.
+        app(ScreenshotFeatureService::class)->setEnabled(false);
+
         $sam = User::create([
             'name' => 'Sam Rivera',
             'email' => config('klog.demo_email'),
@@ -317,7 +324,7 @@ class DemoSeeder extends Seeder
                 ],
                 'tags' => ['food', 'recipes'],
                 'clipping' => [
-                    'url' => 'https://cooking.example.com/recipes/cozy-vegetable-soup',
+                    'url' => 'https://www.bbcgoodfood.com/recipes/collection/soup-recipes',
                     'title' => 'Cozy Vegetable Soup',
                     'content' => '<h2>Cozy Vegetable Soup</h2><p>A forgiving one-pot soup that scales easily and reheats well.</p><p>Sweat onion, carrot and celery, add stock and whatever vegetables need using up, simmer until tender, finish with a handful of pasta.</p>',
                 ],

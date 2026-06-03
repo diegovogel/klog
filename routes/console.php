@@ -27,7 +27,8 @@ if (class_exists(\Spatie\Browsershot\Browsershot::class)) {
     // Schedule::call wrapping Artisan::call would always record success.
     Schedule::command('clippings:screenshot')
         ->dailyAt('02:00')
-        ->when(fn () => app(ScreenshotFeatureService::class)->isEnabled()
+        ->when(fn () => ! config('klog.is_demo')
+            && app(ScreenshotFeatureService::class)->isEnabled()
             && app(ScreenshotFeatureService::class)->isInstalled());
 }
 
