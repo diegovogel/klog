@@ -41,8 +41,9 @@ class AppServiceProvider extends ServiceProvider
      * shares one account — keying by user would lump all visitors into a single
      * bucket. Outside demo mode they resolve to Limit::none(), so production
      * keeps its normal unthrottled single-user behaviour. Chunk uploads get a
-     * higher ceiling because one legitimate file is split across many
-     * sequential chunk requests.
+     * much higher ceiling: the uploader starts every selected file at once, and
+     * the form allows up to 20 files of up to 25 MB (~13 two-MB chunks each), so
+     * a single legitimate submission can burst ~260 chunk requests.
      */
     private function configureDemoRateLimiters(): void
     {
@@ -51,7 +52,7 @@ class AppServiceProvider extends ServiceProvider
             : Limit::none());
 
         RateLimiter::for('demo-chunks', fn (Request $request) => config('klog.is_demo')
-            ? Limit::perMinute(120)->by($request->ip())
+            ? Limit::perMinute(300)->by($request->ip())
             : Limit::none());
     }
 }

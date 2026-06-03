@@ -218,6 +218,6 @@ describe('demo abuse throttling', function () {
         $chunks = (RateLimiter::limiter('demo-chunks'))($request);
 
         expect($writes->maxAttempts)->toBe(30)
-            ->and($chunks->maxAttempts)->toBe(120);
+            ->and($chunks->maxAttempts)->toBe(300);
     });
 });

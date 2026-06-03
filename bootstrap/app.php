@@ -14,12 +14,20 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo('/login');
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
 
-        // In demo mode the per-IP write throttles must see the real client IP,
-        // not the reverse proxy's, or every visitor shares one bucket behind
-        // Cloudflare/Forge. Scoped to demo so production proxy handling is
-        // untouched (env() matches the HEALTH_CHECK_ENABLED pattern below).
+        // In demo mode the per-IP write throttles must see the real client IP.
+        // Trust ONLY the specific fronting proxy CIDRs given in DEMO_TRUSTED_PROXIES
+        // (comma-separated). Left unset, no forwarded headers are trusted, so
+        // request()->ip() is the direct REMOTE_ADDR — correct when the demo points
+        // straight at the origin (how it's deployed). Never trust '*': that lets a
+        // direct client spoof X-Forwarded-For and evade the throttles. Scoped to
+        // demo so production proxy handling is untouched (env() matches the
+        // HEALTH_CHECK_ENABLED pattern below).
         if (env('IS_DEMO', false)) {
-            $middleware->trustProxies(at: '*');
+            $demoProxies = (string) env('DEMO_TRUSTED_PROXIES', '');
+
+            if ($demoProxies !== '' && $demoProxies !== '*') {
+                $middleware->trustProxies(at: explode(',', $demoProxies));
+            }
         }
         $middleware->alias([
             'two-factor' => \App\Http\Middleware\EnsureTwoFactorChallenge::class,
