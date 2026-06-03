@@ -13,6 +13,14 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectGuestsTo('/login');
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+
+        // In demo mode the per-IP write throttles must see the real client IP,
+        // not the reverse proxy's, or every visitor shares one bucket behind
+        // Cloudflare/Forge. Scoped to demo so production proxy handling is
+        // untouched (env() matches the HEALTH_CHECK_ENABLED pattern below).
+        if (env('IS_DEMO', false)) {
+            $middleware->trustProxies(at: '*');
+        }
         $middleware->alias([
             'two-factor' => \App\Http\Middleware\EnsureTwoFactorChallenge::class,
             'admin' => \App\Http\Middleware\RequireAdmin::class,

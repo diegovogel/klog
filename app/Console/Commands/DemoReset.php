@@ -27,25 +27,37 @@ class DemoReset extends Command
             return self::FAILURE;
         }
 
-        $this->info('Clearing demo media…');
-        Storage::disk('local')->deleteDirectory('uploads');
-
         // Bail on the first failing step so a partial/empty database is never
         // reported as a healthy reset (the scheduler keys off this exit code).
         $steps = [
-            ['Rebuilding database…', 'migrate:fresh', ['--force' => true]],
-            ['Seeding demo content…', 'db:seed', ['--class' => DemoSeeder::class, '--force' => true]],
-            ['Rebuilding search index…', 'search:reindex', []],
+            ['Clearing demo media…', function (): bool {
+                // Best-effort: a fresh instance has no uploads dir yet.
+                Storage::disk('local')->deleteDirectory('uploads');
+
+                return true;
+            }],
+            ['Rebuilding database…', fn (): bool => $this->call('migrate:fresh', ['--force' => true]) === self::SUCCESS],
+            ['Seeding demo content…', fn (): bool => $this->call('db:seed', ['--class' => DemoSeeder::class, '--force' => true]) === self::SUCCESS],
+            ['Rebuilding search index…', fn (): bool => $this->call('search:reindex') === self::SUCCESS],
         ];
 
-        foreach ($steps as [$message, $command, $arguments]) {
-            $this->info($message);
+        // migrate:fresh drops every table while the HTTP app stays live, so take
+        // the demo offline for the few seconds the rebuild takes. Without this,
+        // concurrent visitors hit "no such table" errors mid-reset every day.
+        $this->call('down', ['--retry' => 5]);
 
-            if ($this->call($command, $arguments) !== self::SUCCESS) {
-                $this->error("demo:reset aborted: '{$command}' failed.");
+        try {
+            foreach ($steps as [$message, $step]) {
+                $this->info($message);
 
-                return self::FAILURE;
+                if (! $step()) {
+                    $this->error("demo:reset aborted at: {$message}");
+
+                    return self::FAILURE;
+                }
             }
+        } finally {
+            $this->call('up');
         }
 
         $this->info('Demo reset complete.');
