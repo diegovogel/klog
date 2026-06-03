@@ -70,11 +70,9 @@ Route::middleware('guest')->group(function () {
     Route::post('invites/{token}', [InviteController::class, 'accept'])->name('invites.accept');
 });
 
-// In demo mode, throttle write-heavy endpoints to bound abuse. Resolves to an
-// empty (no-op) middleware list in production, so normal behaviour is unchanged.
-$demoWriteThrottle = config('klog.is_demo') ? 'throttle:30,1' : [];
-
-Route::middleware(['auth', 'user-active'])->group(function () use ($demoWriteThrottle) {
+// The demo-writes / demo-chunks rate limiters (see AppServiceProvider) bound
+// abuse on the public demo and are unlimited in production.
+Route::middleware(['auth', 'user-active'])->group(function () {
     Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
     Route::get('two-factor/challenge', [TwoFactorChallengeController::class, 'show'])
@@ -85,7 +83,7 @@ Route::middleware(['auth', 'user-active'])->group(function () use ($demoWriteThr
         ->middleware('throttle:5,1')
         ->name('two-factor.resend');
 
-    Route::middleware('two-factor')->group(function () use ($demoWriteThrottle) {
+    Route::middleware('two-factor')->group(function () {
         Route::get('media/{filename}', [MediaController::class, 'show'])->name('media.show');
 
         Route::get('url-check', [UrlCheckController::class, 'check'])
@@ -93,10 +91,14 @@ Route::middleware(['auth', 'user-active'])->group(function () use ($demoWriteThr
             ->name('url-check');
 
         Route::post('uploads/init', [UploadController::class, 'init'])
-            ->middleware($demoWriteThrottle)
+            ->middleware('throttle:demo-writes')
             ->name('uploads.init');
-        Route::post('uploads/{uploadSession}/chunk', [UploadController::class, 'chunk'])->name('uploads.chunk');
-        Route::delete('uploads/{uploadSession}', [UploadController::class, 'cancel'])->name('uploads.cancel');
+        Route::post('uploads/{uploadSession}/chunk', [UploadController::class, 'chunk'])
+            ->middleware('throttle:demo-chunks')
+            ->name('uploads.chunk');
+        Route::delete('uploads/{uploadSession}', [UploadController::class, 'cancel'])
+            ->middleware('throttle:demo-writes')
+            ->name('uploads.cancel');
 
         Route::get('/', function () {
             return view('memory-feed', [
@@ -159,7 +161,7 @@ Route::middleware(['auth', 'user-active'])->group(function () use ($demoWriteThr
             $memory->reindexSearch();
 
             return redirect('/')->with('success', 'Memory saved.');
-        })->middleware($demoWriteThrottle)->name('memories.store');
+        })->middleware('throttle:demo-writes')->name('memories.store');
 
         Route::delete('memories/{memory}', function (Memory $memory) {
             $memory->deleteWithRelations();

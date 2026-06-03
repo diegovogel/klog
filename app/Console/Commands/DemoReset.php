@@ -30,14 +30,23 @@ class DemoReset extends Command
         $this->info('Clearing demo media…');
         Storage::disk('local')->deleteDirectory('uploads');
 
-        $this->info('Rebuilding database…');
-        $this->call('migrate:fresh', ['--force' => true]);
+        // Bail on the first failing step so a partial/empty database is never
+        // reported as a healthy reset (the scheduler keys off this exit code).
+        $steps = [
+            ['Rebuilding database…', 'migrate:fresh', ['--force' => true]],
+            ['Seeding demo content…', 'db:seed', ['--class' => DemoSeeder::class, '--force' => true]],
+            ['Rebuilding search index…', 'search:reindex', []],
+        ];
 
-        $this->info('Seeding demo content…');
-        $this->call('db:seed', ['--class' => DemoSeeder::class, '--force' => true]);
+        foreach ($steps as [$message, $command, $arguments]) {
+            $this->info($message);
 
-        $this->info('Rebuilding search index…');
-        $this->call('search:reindex');
+            if ($this->call($command, $arguments) !== self::SUCCESS) {
+                $this->error("demo:reset aborted: '{$command}' failed.");
+
+                return self::FAILURE;
+            }
+        }
 
         $this->info('Demo reset complete.');
 

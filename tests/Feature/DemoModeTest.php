@@ -2,7 +2,9 @@
 
 use App\Jobs\InstallScreenshotsJob;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\RateLimiter;
 
 describe('one-click demo login', function () {
     it('404s when the app is not in demo mode', function () {
@@ -122,5 +124,40 @@ describe('demo:reset safety guard', function () {
         $this->artisan('demo:reset')
             ->expectsOutputToContain('only available when IS_DEMO=true')
             ->assertExitCode(1);
+    });
+});
+
+describe('demo abuse throttling', function () {
+    // The chunk endpoint must carry a throttle too: one upload session can
+    // receive unlimited chunk writes, so leaving it uncapped defeats the demo
+    // abuse protection even when uploads/init is throttled.
+    it('throttles every upload + memory write route with the demo limiters', function () {
+        $routes = app('router')->getRoutes();
+
+        expect($routes->getByName('uploads.chunk')->gatherMiddleware())->toContain('throttle:demo-chunks')
+            ->and($routes->getByName('uploads.init')->gatherMiddleware())->toContain('throttle:demo-writes')
+            ->and($routes->getByName('uploads.cancel')->gatherMiddleware())->toContain('throttle:demo-writes')
+            ->and($routes->getByName('memories.store')->gatherMiddleware())->toContain('throttle:demo-writes');
+    });
+
+    it('makes the demo limiters unlimited outside demo mode', function () {
+        config(['klog.is_demo' => false]);
+        $request = Request::create('/', 'POST', server: ['REMOTE_ADDR' => '127.0.0.1']);
+
+        foreach (['demo-writes', 'demo-chunks'] as $name) {
+            $limit = (RateLimiter::limiter($name))($request);
+            expect($limit->maxAttempts)->toBe(PHP_INT_MAX);
+        }
+    });
+
+    it('caps the demo limiters in demo mode', function () {
+        config(['klog.is_demo' => true]);
+        $request = Request::create('/', 'POST', server: ['REMOTE_ADDR' => '127.0.0.1']);
+
+        $writes = (RateLimiter::limiter('demo-writes'))($request);
+        $chunks = (RateLimiter::limiter('demo-chunks'))($request);
+
+        expect($writes->maxAttempts)->toBe(30)
+            ->and($chunks->maxAttempts)->toBe(120);
     });
 });
