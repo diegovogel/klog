@@ -66,10 +66,13 @@ class DemoReset extends Command
             }],
             ['Rebuilding database…', fn (): bool => $this->call('migrate:fresh', ['--force' => true]) === self::SUCCESS],
             ['Evicting stale sessions…', function (): bool {
-                // migrate:fresh empties the database session table, but the file
-                // driver keeps sessions on disk. Sweep them so browsers logged in
-                // before the reset don't carry stale auth into the fresh demo
-                // (the seeder recreates the shared users with the same IDs).
+                // The demo runs on the `database` session driver (see .env), which
+                // migrate:fresh already empties; the `file` driver keeps sessions
+                // on disk, so sweep those too. Both cover every way the demo is
+                // actually deployed. Other persistent drivers (redis, memcached,
+                // dynamodb) would need their own flush, and `cookie` sessions live
+                // client-side and can't be evicted server-side at all — none are
+                // used here, so we don't carry per-driver flush logic for them.
                 if (config('session.driver') === 'file') {
                     File::cleanDirectory(config('session.files'));
                 }
