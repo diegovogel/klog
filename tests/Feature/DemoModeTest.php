@@ -5,6 +5,7 @@ use App\Jobs\InstallScreenshotsJob;
 use App\Models\User;
 use Database\Seeders\DemoSeeder;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
@@ -53,6 +54,36 @@ describe('one-click demo login', function () {
         User::factory()->admin()->create(['email' => config('klog.demo_email')]);
 
         $this->get(route('login'))->assertOk()->assertSee('Enter demo');
+    });
+});
+
+describe('multipart upload cap', function () {
+    // The chunked flow already reads max_file_size; the no-JS multipart fallback
+    // must honour the same ceiling, or the demo's small cap is trivially bypassed.
+    it('rejects a multipart file larger than the configured max_file_size', function () {
+        Storage::fake('local');
+        config(['klog.uploads.max_file_size' => 25 * 1024 * 1024]);
+        $this->actingAs(User::factory()->create());
+
+        $oversized = UploadedFile::fake()->image('big.jpg')->size(30 * 1024); // 30 MB
+
+        $this->post(route('memories.store'), [
+            'memory_date' => now()->format('Y-m-d'),
+            'media' => [$oversized],
+        ])->assertSessionHasErrors('media.0');
+    });
+
+    it('accepts a multipart file within the configured max_file_size', function () {
+        Storage::fake('local');
+        config(['klog.uploads.max_file_size' => 25 * 1024 * 1024]);
+        $this->actingAs(User::factory()->create());
+
+        $ok = UploadedFile::fake()->image('ok.jpg')->size(5 * 1024); // 5 MB
+
+        $this->post(route('memories.store'), [
+            'memory_date' => now()->format('Y-m-d'),
+            'media' => [$ok],
+        ])->assertRedirect('/')->assertSessionHasNoErrors();
     });
 });
 

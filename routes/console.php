@@ -13,7 +13,12 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command('clippings:fetch-content')->dailyAt('01:00');
+// Skipped in demo mode: visitors can save arbitrary clipping URLs, and the
+// fetcher pulls them server-side without SSRF host validation. The demo's own
+// clippings are seeded with content already, so nothing needs fetching there.
+if (! config('klog.is_demo')) {
+    Schedule::command('clippings:fetch-content')->dailyAt('01:00');
+}
 
 if (config('klog.is_demo')) {
     // Daily refresh only. Initial seeding happens at deploy time: the Forge
