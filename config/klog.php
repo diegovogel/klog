@@ -25,6 +25,15 @@ return [
     'demo_password' => env('DEMO_PASSWORD', 'demo1234'),
 
     /*
+    | How often the demo wipes and re-seeds itself (cron expression). Defaults to
+    | every 2 hours so a visitor rarely sees the previous visitor's leftovers,
+    | while leaving plenty of time to try the app. Tune via DEMO_RESET_CRON
+    | (e.g. "0 * * * *" hourly, "0 5 * * *" daily) without a code change.
+    */
+
+    'demo_reset_cron' => env('DEMO_RESET_CRON', '0 */2 * * *'),
+
+    /*
     |--------------------------------------------------------------------------
     | Maintainer Email
     |--------------------------------------------------------------------------
