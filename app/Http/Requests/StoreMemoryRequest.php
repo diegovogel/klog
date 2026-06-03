@@ -77,13 +77,15 @@ class StoreMemoryRequest extends FormRequest
      */
     public function messages(): array
     {
+        $maxMegabytes = (int) (min((int) (config('klog.uploads.max_file_size') / 1024), 102400) / 1024);
+
         return [
             'clippings.*.required' => 'Each clipping must have a URL.',
             'clippings.*.url' => 'Each clipping must be a valid URL.',
             'clippings.*.max' => 'Each URL must be 2048 characters or fewer.',
             'media.max' => 'You may upload a maximum of 20 files.',
             'media.*.mimetypes' => 'Each file must be a supported image, video, or audio format.',
-            'media.*.max' => 'Each file must be 100 MB or smaller.',
+            'media.*.max' => "Each file must be {$maxMegabytes} MB or smaller.",
         ];
     }
 }

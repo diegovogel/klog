@@ -71,7 +71,7 @@ describe('multipart upload cap', function () {
         $this->post(route('memories.store'), [
             'memory_date' => now()->format('Y-m-d'),
             'media' => [$oversized],
-        ])->assertSessionHasErrors('media.0');
+        ])->assertSessionHasErrors(['media.0' => 'Each file must be 25 MB or smaller.']);
     });
 
     it('accepts a multipart file within the configured max_file_size', function () {

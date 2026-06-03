@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Database\Seeders\DemoSeeder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 
 class DemoReset extends Command
@@ -64,6 +65,17 @@ class DemoReset extends Command
                 return true;
             }],
             ['Rebuilding database…', fn (): bool => $this->call('migrate:fresh', ['--force' => true]) === self::SUCCESS],
+            ['Evicting stale sessions…', function (): bool {
+                // migrate:fresh empties the database session table, but the file
+                // driver keeps sessions on disk. Sweep them so browsers logged in
+                // before the reset don't carry stale auth into the fresh demo
+                // (the seeder recreates the shared users with the same IDs).
+                if (config('session.driver') === 'file') {
+                    File::cleanDirectory(config('session.files'));
+                }
+
+                return true;
+            }],
             ['Seeding demo content…', fn (): bool => $this->call('db:seed', ['--class' => DemoSeeder::class, '--force' => true]) === self::SUCCESS],
             ['Rebuilding search index…', fn (): bool => $this->call('search:reindex') === self::SUCCESS],
         ];
