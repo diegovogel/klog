@@ -1,6 +1,9 @@
 # Klog
 
-> 🚧 PLEASE NOTE: this is a work in progress. 🚧
+> 🚧 **PLEASE NOTE: this is a work in progress.** 🚧
+>
+> Some things are rough around the edges. Especially the design, which I have so far put zero time into (functionality
+> first).
 
 An app for collecting memories of my kids. Like a private Tumblr.
 
@@ -9,7 +12,10 @@ or 40 years from now, and I want my kids and their families to be able to do the
 build anything on the web that's supposed to last that long, but to improve my chances, I can't rely on a platform that
 might shut down. I'm sure I could export the data, but then it would be a pain to import it or use it.
 
-**What's with the name?** It's a play on words: kid log, kinda like blog and web log.
+**What's with the name?** It's a play on words: kid log, kinda like vlog and video log.
+
+**Live demo:** https://klog-demo.diego.works/. Some features are disabled or limited in the demo, e.g. settings are view
+only and uploads are limited to 25MB.
 
 ## Goals
 
@@ -19,15 +25,13 @@ might shut down. I'm sure I could export the data, but then it would be a pain t
     - Photo/video
     - Audio
     - URL (aka web clipping) — automatically takes a snapshot of the URL in case of broken links down the road.
-- Can be browsed by visiting a domain and logging in.
+- Can be browsed by visiting a domain and logging in (as opposed to installing an app).
 - Built to last. The idea is that we will view these 20+ years from now.
 - Excellent search. If we can't find a memory, what's the point?
 
 ## Architecture Decisions
 
-- **Laravel back end.** I already know Laravel. It's healthy. It's flexible. The data is clean and portable (as opposed
-  to
-  WordPress, where the DB tables are a mess).
+- **Laravel back end.** I already know Laravel. It's healthy. It's flexible. The data is clean and portable.
 - **Blade front end enhanced with Alpine or vanilla JS.** No dependence on a build step means better maintainability and
   longevity because there are fewer things to become obsolete. Server-rendered HTML is more likely to last and just
   simpler. Blade templates can easily be migrated to something else later if needed.
@@ -43,11 +47,14 @@ might shut down. I'm sure I could export the data, but then it would be a pain t
 - **SQLite database.** Lightweight, portable, and plenty powerful for this project.
 - **HTML saved in DB.** Memory text content will be HTML so we get rich text, and stored in the DB for better
   searchability. I considered Markdown for the content but decided against it to avoid depending on a parser.
+- **Email notifications for errors.** This app is intented to be ownable by non-technical folks and durable. Error
+  monitoring is designed to just work. It does not rely on an external service and will find someone to notify even if
+  it hasn't been set up.
 
 ### User Management
 
-There is no registration page. Users are managed entirely via Artisan commands on the server. Since new users will very
-rarely be created, this slight inconvenience seemed worth the simplicity and security benefits.
+There is no registration page. Users are managed entirely through the admin settings page or via Artisan commands on the
+server.
 
 ```bash
 # Create a new user (interactive prompts for name, email, password)
@@ -71,7 +78,10 @@ An optional screenshot feature is available for web clippings. I wanted to inclu
 it's disabled by default because it depends on a couple third-party libraries. When enabled, a
 screenshot is taken from each web clipping URL and saved to the app's media. This is for archiving purposes because this
 app is meant to outlast most web pages. It's built as a progressive enhancement: web clippings work fine either way,
-screenshots are simply added if the system is enabled.
+screenshots are simply added if the system is enabled. The system can be turned on and off in admin settings or via
+Artisan commands.
+
+#### Artisan Commands
 
 To enable screenshots, run the installation command:
 
@@ -101,6 +111,18 @@ php artisan clippings:uninstall-screenshots
 ```
 
 This removes the dependencies, which automatically deactivates the scheduled task.
+
+#### Consent Banners and Captchas
+
+Consent banners are problematic for the screenshot system when they obscure the target content. The app uses three
+methods of getting around them:
+
+1. CSS hiding: targets common class/ID patterns.
+2. Text-based button clicking: targets common dismissal button text and uses JS to click the button.
+3. Nuclear option: removes any remaining fixed/sticky high-z-index elements covering large viewport areas.
+
+I considered trying to get around captchas with AI, but given the goals of this project, that felt too heavy even as an
+opt-in feature. Especially for a "best effort" archival feature like webpage screenshots.
 
 ### Media Optimization
 
@@ -168,6 +190,13 @@ required).
   allow us to print new memories from time to time.
 - [ ] **Audio and video transcription.** When an audio or video memory is uploaded, it would be automatically
   transcribed and
-  saved to the DB. The text could be used for search, displayed for accessibility, and used in the PDF export.
-- [ ] **Automated image alt text.** When an image is uploaded, AI scans it and generates alt text.
-- [ ] **2FA and self-service password reset.**
+  saved to the DB. The text could be used for search, displayed for accessibility, and used in the PDF export. This will
+  be AI-powered and require a local dependency or third-party service, so it will be opt-in like the screenshot feature.
+- [ ] **Automated image alt text.** When an image is uploaded, AI scans it and generates alt text. This will also be
+  opt-in like the screenshot feature.
+- [x] **2FA and self-service password reset.**
+- [x] **Admin settings page** for managing users, enabling features, and controlling other app settings.
+- [ ] **Bulk import.** Import a CSV, folder of images, etc. Possibly with an opt-in AI assistance feature where AI
+  analyzes the images, groups them, and guides the user through creating memories.
+
+... plus many other smaller improvements.
