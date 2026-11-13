@@ -14,14 +14,20 @@ class InitUploadRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $mimeType = (string) $this->input('mime_type', '');
+        $mimeType = $this->input('mime_type');
+        $filename = $this->input('original_filename');
 
-        // Browsers sometimes report an empty type for files picked from the iOS Files app.
-        if ($mimeType === '' && $this->filled('original_filename')) {
-            $mimeType = MimeType::fromExtension(pathinfo($this->input('original_filename'), PATHINFO_EXTENSION))?->value ?? '';
+        // Non-string input is left untouched so the validation rules reject it with a 422.
+        if ($mimeType !== null && ! is_string($mimeType)) {
+            return;
         }
 
-        if ($mimeType !== '') {
+        // Browsers sometimes report an empty type for files picked from the iOS Files app.
+        if (($mimeType ?? '') === '' && is_string($filename) && $filename !== '') {
+            $mimeType = MimeType::fromExtension(pathinfo($filename, PATHINFO_EXTENSION))?->value;
+        }
+
+        if (is_string($mimeType) && $mimeType !== '') {
             $this->merge(['mime_type' => MimeType::normalize($mimeType)]);
         }
     }
