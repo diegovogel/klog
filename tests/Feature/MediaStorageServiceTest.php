@@ -113,6 +113,17 @@ describe('MediaStorageService', function () {
         expect($results[0]->mime_type)->toBe('audio/mp4')
             ->and($results[0]->type)->toBe('audio');
     });
+
+    it('stores m4a files detected as audio/x-m4a as audio/mp4', function () {
+        $memory = Memory::factory()->create();
+
+        $file = UploadedFile::fake()->create('Voice memo.m4a', 500, 'audio/x-m4a');
+
+        $results = $this->service->storeForMemory($memory, [$file]);
+
+        expect($results[0]->mime_type)->toBe('audio/mp4')
+            ->and($results[0]->type)->toBe('audio');
+    });
 });
 
 describe('storeScreenshotForClipping', function () {

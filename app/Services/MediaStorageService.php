@@ -46,8 +46,8 @@ class MediaStorageService
      */
     private function resolveMimeType(UploadedFile $file): string
     {
-        $detected = $file->getMimeType();
-        $clientMime = $file->getClientMimeType();
+        $detected = MimeType::normalize((string) $file->getMimeType());
+        $clientMime = MimeType::normalize($file->getClientMimeType());
 
         $audioOverrides = [
             'video/webm' => 'audio/webm',
