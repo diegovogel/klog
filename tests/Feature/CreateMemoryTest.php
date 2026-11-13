@@ -235,6 +235,34 @@ describe('create memory', function () {
             ->assertSee('data-media-upload', false);
     });
 
+    it('lists the m4a extension in the media input accept attribute', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('memories.create'))
+            ->assertSuccessful()
+            ->assertSee('.m4a', false);
+    });
+
+    it('stores a memory with an m4a file detected as audio/x-m4a', function () {
+        Storage::fake('local');
+        $user = User::factory()->create();
+
+        $file = UploadedFile::fake()->create('Voice memo.m4a', 500, 'audio/x-m4a');
+
+        $this->actingAs($user)
+            ->post(route('memories.store'), [
+                'memory_date' => '2026-02-15',
+                'media' => [$file],
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect('/');
+
+        $media = Memory::first()->media->first();
+        expect($media->mime_type)->toBe('audio/mp4')
+            ->and($media->type)->toBe('audio');
+    });
+
     it('stores a memory with an uploaded image', function () {
         Storage::fake('local');
         $user = User::factory()->create();

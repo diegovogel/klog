@@ -26,7 +26,7 @@
                 type="file"
                 name="{{ $name }}[]"
                 multiple
-                accept="image/*,video/*,audio/*"
+                accept="{{ \App\Enums\MimeType::acceptAttribute() }}"
                 data-media-upload-input
                 hidden
             >

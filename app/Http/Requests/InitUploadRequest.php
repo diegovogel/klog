@@ -14,12 +14,15 @@ class InitUploadRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        // Strip codec parameters from MIME types (e.g. "audio/mp4;codecs=mp4a.40.2" → "audio/mp4").
-        // iOS Safari's MediaRecorder reports MIME types with codec suffixes.
-        if ($this->has('mime_type') && str_contains($this->input('mime_type'), ';')) {
-            $this->merge([
-                'mime_type' => trim(explode(';', $this->input('mime_type'))[0]),
-            ]);
+        $mimeType = (string) $this->input('mime_type', '');
+
+        // Browsers sometimes report an empty type for files picked from the iOS Files app.
+        if ($mimeType === '' && $this->filled('original_filename')) {
+            $mimeType = MimeType::fromExtension(pathinfo($this->input('original_filename'), PATHINFO_EXTENSION))?->value ?? '';
+        }
+
+        if ($mimeType !== '') {
+            $this->merge(['mime_type' => MimeType::normalize($mimeType)]);
         }
     }
 

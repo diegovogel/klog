@@ -44,7 +44,7 @@ class StoreMemoryRequest extends FormRequest
             'media' => ['nullable', 'array', 'max:20'],
             'media.*' => [
                 'file',
-                'mimetypes:'.implode(',', MimeType::values()),
+                'mimetypes:'.implode(',', MimeType::acceptedValues()),
                 'max:'.$maxKilobytes,
             ],
             'uploads' => ['nullable', 'array', 'max:20'],

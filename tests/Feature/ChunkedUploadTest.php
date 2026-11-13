@@ -61,6 +61,50 @@ describe('chunked upload', function () {
             expect($session->mime_type)->toBe('audio/mp4');
         });
 
+        it('normalizes the audio/x-m4a type macOS reports for m4a files', function () {
+            $user = User::factory()->create();
+
+            $this->actingAs($user)
+                ->postJson(route('uploads.init'), [
+                    'original_filename' => 'Voice memo.m4a',
+                    'mime_type' => 'audio/x-m4a',
+                    'total_size' => 50000,
+                    'total_chunks' => 1,
+                ])
+                ->assertCreated();
+
+            expect(UploadSession::first()->mime_type)->toBe('audio/mp4');
+        });
+
+        it('infers the MIME type from the extension when the browser reports none', function () {
+            $user = User::factory()->create();
+
+            $this->actingAs($user)
+                ->postJson(route('uploads.init'), [
+                    'original_filename' => 'Voice memo.m4a',
+                    'mime_type' => '',
+                    'total_size' => 50000,
+                    'total_chunks' => 1,
+                ])
+                ->assertCreated();
+
+            expect(UploadSession::first()->mime_type)->toBe('audio/mp4');
+        });
+
+        it('rejects an empty MIME type with an unsupported extension', function () {
+            $user = User::factory()->create();
+
+            $this->actingAs($user)
+                ->postJson(route('uploads.init'), [
+                    'original_filename' => 'notes.pdf',
+                    'mime_type' => '',
+                    'total_size' => 50000,
+                    'total_chunks' => 1,
+                ])
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors('mime_type');
+        });
+
         it('rejects files exceeding the configured max size', function () {
             $user = User::factory()->create();
 
